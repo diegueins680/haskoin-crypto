@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                  haskoin-crypto
-version:               0.1.0.0
+version:               0.1.1.0
 synopsis:              Implementation of the Bitcoin cryptographic primitives in Haskell
 -- description:         
 homepage:              http://github.com/plaprade/haskoin-crypto
@@ -10,7 +10,7 @@ license:               PublicDomain
 license-file:          UNLICENSE
 author:                Philippe Laprade
 maintainer:            plaprade@gmail.com
-category:              Network
+category:              Bitcoin
 build-type:            Simple
 cabal-version:         >= 1.9.2
 
@@ -24,43 +24,46 @@ library
                        Haskoin.Crypto.Base58
                        Haskoin.Crypto.Keys,
                        Haskoin.Crypto.ECDSA
-    build-depends:     base ==4.6.*, 
-                       containers ==0.5.*,
-                       mtl ==2.1.*, 
-                       binary ==0.7.*, 
-                       bytestring ==0.10.*, 
-                       cryptohash ==0.9.*
+    build-depends:     base == 4.6.*, 
+                       containers == 0.5.*,
+                       mtl == 2.1.*, 
+                       binary == 0.7.*, 
+                       bytestring == 0.10.*, 
+                       cryptohash == 0.9.*,
+                       haskoin-util == 0.1.*
     hs-source-dirs:    src
     ghc-options:       -O2
 
 Test-Suite test-haskoin-crypto
     type:              exitcode-stdio-1.0
     main-is:           Main.hs
-    build-depends:     base ==4.6.*, 
-                       containers ==0.5.*,
-                       mtl ==2.1.*, 
-                       binary ==0.7.*, 
-                       bytestring ==0.10.*, 
-                       cryptohash ==0.9.*,
-                       QuickCheck ==2.5.*, 
-                       test-framework ==0.8.*, 
-                       test-framework-quickcheck2 ==0.3.*, 
-                       test-framework-hunit ==0.3.*, 
-                       HUnit ==1.2.*
+    build-depends:     base == 4.6.*, 
+                       containers == 0.5.*,
+                       mtl == 2.1.*, 
+                       binary == 0.7.*, 
+                       bytestring == 0.10.*, 
+                       cryptohash == 0.9.*,
+                       haskoin-util == 0.1.*,
+                       QuickCheck == 2.5.*, 
+                       test-framework == 0.8.*, 
+                       test-framework-quickcheck2 == 0.3.*, 
+                       test-framework-hunit == 0.3.*, 
+                       HUnit == 1.2.*
     hs-source-dirs:    testsuite, src
     ghc-options:       -O2
 
 Benchmark bench-haskoin-crypto
     type:              exitcode-stdio-1.0
     main-is:           Main.hs
-    build-depends:     base ==4.6.*, 
-                       containers ==0.5.*,
-                       mtl ==2.1.*, 
-                       binary ==0.7.*, 
-                       bytestring ==0.10.*, 
-                       cryptohash ==0.9.*,
-                       time ==1.4.*,
-                       random ==1.0.*
+    build-depends:     base == 4.6.*, 
+                       containers == 0.5.*,
+                       mtl == 2.1.*, 
+                       binary == 0.7.*, 
+                       bytestring == 0.10.*, 
+                       cryptohash == 0.9.*,
+                       haskoin-util == 0.1.*,
+                       time == 1.4.*,
+                       random == 1.0.*
     hs-source-dirs:    src, benchmark
     ghc-options:       -O4 
     ghc-prof-options:  -auto-all -with-rtsopts=-p

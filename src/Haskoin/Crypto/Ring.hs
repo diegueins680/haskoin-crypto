@@ -55,9 +55,7 @@ import qualified Data.ByteString as BS
 
 import Haskoin.Crypto.NumberTheory (mulInverse)
 import Haskoin.Crypto.Util 
-    ( toStrictBS
-    , toLazyBS
-    , bsToInteger
+    ( bsToInteger
     , integerToBS
     )
 

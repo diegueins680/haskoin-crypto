@@ -26,14 +26,11 @@ import Control.Monad.State
     )
 
 import qualified Data.ByteString as BS (length)
-
+  
 import Haskoin.Crypto.Hash (hash256)
 import Haskoin.Crypto.Keys (PrivateKey(..), PublicKey(..), curveG)
-import Haskoin.Crypto.Util 
-    ( toStrictBS
-    , isolate
-    , integerToBS
-    )
+import Haskoin.Util (toStrictBS, isolate)
+import Haskoin.Crypto.Util (integerToBS)
 import Haskoin.Crypto.Point 
     ( Point
     , getAffine, makePoint

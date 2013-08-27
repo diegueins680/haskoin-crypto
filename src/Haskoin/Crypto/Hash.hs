@@ -27,7 +27,7 @@ import Control.Applicative ((<$>))
 import qualified Data.ByteString as BS (ByteString)
 
 import Haskoin.Crypto.Ring (Hash256, Hash160)
-import Haskoin.Crypto.Util (toLazyBS)
+import Haskoin.Util (toLazyBS)
 
 newtype CheckSum32 = CheckSum32 { runCheckSum32 :: Word32 }
     deriving (Show, Eq)

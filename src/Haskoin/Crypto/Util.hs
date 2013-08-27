@@ -1,38 +1,15 @@
 module Haskoin.Crypto.Util
-( toStrictBS
-, toLazyBS
-, isolate
-, integerToBS
+( integerToBS
 , bsToInteger
-, stringToBS
 ) where
 
 import Data.Word (Word8)
-import Data.Binary.Get
-    ( Get
-    , runGetOrFail
-    , getByteString
-    )
-import qualified Data.ByteString.Lazy as BL 
-    ( ByteString
-    , toChunks
-    , fromChunks
-    , length
-    )
 import qualified Data.ByteString as BS 
     ( ByteString
-    , concat, length
     , pack, unpack
     )
 import Data.Bits ((.|.), shiftL, shiftR)
 import Data.List (unfoldr)
-import Data.Char (ord)
-
-toStrictBS :: BL.ByteString -> BS.ByteString
-toStrictBS = BS.concat . BL.toChunks
-
-toLazyBS :: BS.ByteString -> BL.ByteString
-toLazyBS bs = BL.fromChunks [bs]
 
 bsToInteger :: BS.ByteString -> Integer
 bsToInteger = (foldr f 0) . reverse . BS.unpack
@@ -45,18 +22,4 @@ integerToBS i
     | otherwise = error "integerToBS not defined for negative values"
     where f 0 = Nothing
           f x = Just $ (fromInteger x :: Word8, x `shiftR` 8)
-
-stringToBS :: String -> BS.ByteString
-stringToBS s = BS.pack $ map (fromIntegral . ord) s
-
--- Isolate a Get monad for the next Int bytes
--- Fails if the input monad failed or some input was not consumed
-isolate :: Int -> Get a -> Get a
-isolate i g = do
-    bs <- getByteString i
-    case runGetOrFail g (toLazyBS bs) of
-        (Left (_, _, err)) -> fail err
-        (Right (bs, _, res))
-            | BL.length bs > 0 -> fail "Isolate: unconsumed input"
-            | otherwise -> return res
 

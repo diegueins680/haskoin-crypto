@@ -24,11 +24,8 @@ import Haskoin.Crypto.Hash
     , hash160BS
     , hash256BS
     )
-import Haskoin.Crypto.Util 
-    ( integerToBS
-    , bsToInteger 
-    , toStrictBS 
-    )
+import Haskoin.Crypto.Util (integerToBS, bsToInteger)
+import Haskoin.Util (toStrictBS)
 
 b58String :: String
 b58String = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"

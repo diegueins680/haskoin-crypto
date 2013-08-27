@@ -21,6 +21,7 @@ import Haskoin.Crypto.Ring
 import Haskoin.Crypto.NumberTheory
 import Haskoin.Crypto.Util
 import Haskoin.Crypto.Keys
+import Haskoin.Util
 
 tests :: [Test]
 tests = 

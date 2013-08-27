@@ -18,6 +18,7 @@ import QuickCheckUtils
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.NumberTheory
 import Haskoin.Crypto.Util
+import Haskoin.Util
 
 tests :: [Test]
 tests = 
