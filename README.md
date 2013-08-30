@@ -322,15 +322,26 @@ To compute a `CheckSum32`, use:
     cabal install
 ```
 
-For running the test suites
+### Tests
+
+If you are missing the test dependencies:
 
 ```sh
-    cabal configure --enable-test
+    cabal install --enable-tests
+    cabal test
+```
+
+If you have the test dependencies, you can build without installing:
+
+```sh
+    cabal configure --enable-tests
     cabal build
     cabal test
 ```
 
-For running the benchmarks
+The tests can take a few minutes to run.
+
+### Benchmarks
 
 ```sh
     cabal configure --enable-benchmark
