@@ -295,10 +295,30 @@ To compute a `CheckSum32`, use:
     chksum32 :: BS.ByteString -> CheckSum32
 ```
 
+## Dependencies
+
+- Cabal package manager
+
+```sh
+    # in Ubuntu
+    apt-get install cabal-install
+```
+
+- haskoin-util
+
+```sh
+    # haskoin-util is not on Hackage (yet) 
+    git clone https://github.com/plaprade/haskoin-util.git
+    cd haskoin-util
+    cabal install
+```
+
 ## Installing
 
 ```sh
+    # haskoin-crypto is not on Hackage (yet) 
     git clone https://github.com/plaprade/haskoin-crypto.git
+    cd haskoin-crypto
     cabal install
 ```
 
@@ -374,7 +394,7 @@ We're glad you want to contribute! It's simple:
 
 Code guidelines:
 
-- 80 colums. If you need more, you're doing something wrong. It's not readable.
+- 80 columns.
 - 4 space indentation. No tabs.
 - Follow the general style of the code, whenever it makes sense.
 
