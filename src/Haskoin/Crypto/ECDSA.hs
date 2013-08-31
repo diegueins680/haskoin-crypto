@@ -9,11 +9,7 @@ module Haskoin.Crypto.ECDSA
 import Data.Maybe (fromJust)
 
 import qualified Data.Binary as B (Binary, get, put)
-import Data.Binary.Put 
-    ( runPut
-    , putWord8
-    , putByteString
-    )
+import Data.Binary.Put (putWord8, putByteString, runPut)
 import Data.Binary.Get (getWord8)
 
 import Control.Applicative (Applicative, (<*>), (<$>), pure)

@@ -13,9 +13,9 @@ module Haskoin.Crypto.Keys
 , curveG
 ) where
 
-import Data.Binary (Binary, get, put)
+import Data.Binary (Binary, get, put, encode)
 import Data.Binary.Get (Get, getWord8)
-import Data.Binary.Put (Put, putWord8, runPut)
+import Data.Binary.Put (Put, putWord8)
 
 import Control.Monad (when, unless, guard)
 import Control.Applicative ((<$>),(<*>))
@@ -143,7 +143,7 @@ getCompressed e = do
 publicKeyAddress :: PublicKey -> BS.ByteString
 publicKeyAddress p = 
     encodeBase58Check . (BS.cons 0x00) . hash160BS . hash256BS $ bs
-    where bs = toStrictBS $ runPut $ put p 
+    where bs = toStrictBS $ encode p 
 
 fromWIF :: BS.ByteString -> Maybe PrivateKey
 fromWIF bs = do
@@ -167,5 +167,5 @@ toWIF k = case k of
     (PrivateKeyU 0) -> error "0 is an invalid private key to export"
     (PrivateKey  d) -> encodeBase58Check $ BS.cons 0x80 (BS.snoc (bs d) 0x01)
     (PrivateKeyU d) -> encodeBase58Check $ BS.cons 0x80 (bs d)
-    where bs x = toStrictBS $ runPut $ put $ toMod256 x
+    where bs x = toStrictBS $ encode (toMod256 x)
 

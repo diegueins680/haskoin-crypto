@@ -9,9 +9,7 @@ import Data.Char (ord)
 import Data.Word (Word8)
 import Data.Maybe (fromJust)
 import Data.Bits (shiftL)
-import Data.Binary (Get, Put, get, put)
-import Data.Binary.Put (runPut)
-import Data.Binary.Get (runGet)
+import Data.Binary (Get, Put, encode)
 
 import Control.Applicative ((<$>))
 import Control.Monad (guard)
@@ -74,7 +72,7 @@ decodeBase58 bs = r >>= return . (BS.append prefix)
 
 encodeBase58Check :: BS.ByteString -> BS.ByteString
 encodeBase58Check bs = encodeBase58 $ BS.append bs chk
-    where chk = toStrictBS $ runPut $ put (chksum32 bs)
+    where chk = toStrictBS $ encode (chksum32 bs)
 
 -- decoding fails if the bytestring contains invalid base58 characters
 -- or if the checksum doesn't match
@@ -82,6 +80,6 @@ decodeBase58Check :: BS.ByteString -> Maybe BS.ByteString
 decodeBase58Check bs = do
     rs <- decodeBase58 bs
     let (res,chk) = BS.splitAt ((BS.length rs) - 4) rs
-    guard $ chk == (toStrictBS $ runPut $ put (chksum32 res))
+    guard $ chk == (toStrictBS $ encode (chksum32 res))
     return res
 

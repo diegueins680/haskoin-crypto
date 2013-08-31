@@ -41,7 +41,6 @@ import Data.Binary.Put
     , putWord32be
     , putWord8
     , putByteString
-    , runPut
     )
 import Control.Monad (unless, guard)
 import Control.Applicative ((<$>))

@@ -31,9 +31,7 @@ which provides the following advantages:
     import Haskoin.Crypto.Util (bsToInteger)
 
     -- For serializing/de-serializing interface
-    import Data.Binary
-    import Data.Binary.Put
-    import Data.Binary.Get
+    import Data.Binary (encode, decodeOrFail)
 
     -- Access to /dev/random
     import System.IO
@@ -62,10 +60,12 @@ which provides the following advantages:
             -- Deserialize a private key from WIF format
             priv' = fromWIF wif
 
-            -- Serialize a public key
-        let pubBin = runPut $ put pub
-            -- Deserialize a public key
-            pub'   = runGet get pubBin :: PublicKey
+            -- Serialize and de-serialize a public key
+            -- See Data.Binary for more details
+        let pubBin = encode pub
+            pub'   = case decodeOrFail pubBin of
+                (Left  (_, _, err)) -> error err
+                (Right (_, _, res)) -> res :: PublicKey
 
         -- Generate a random seed to create signature nonces
         seed <- random256
@@ -84,13 +84,20 @@ which provides the following advantages:
             let ver1 = verifyMessage hash sig1 pub
                 ver2 = verifyMessage hash sig2 pub
 
-                -- Serialize a signature 
-            let sigBin = runPut $ put sig1
+                -- Serialize and de-serialize a signature
+                -- See Data.Binary for more details
+            let sigBin = encode sig1
                 -- Deserialize a signature
-                sig1'  = runGet get sigBin :: Signature
+                sig1'  = case decodeOrFail sigBin of
+                    (Left  (_, _, err)) -> error err
+                    (Right (_, _, res)) -> res :: Signature
 
             return ()
+
+        print $ (show priv)
+        print $ (show seed)
 ```
+
 ## Usage
 
 All the types and functions in this section are exported by `Haskoin.Crypto`
@@ -117,22 +124,23 @@ with an upper-case U. The data constructors are mainly used internally for
 serialization and are not exported by the library.
 
 The `PublicKey` type is an instance of `Data.Binary` so it can be serialized
-and de-serialized through the `Get` and `Put monads. Below is a sample code
-describing how to use the serialization interface.
+and de-serialized through the `encode` and `decodeOrFail functions. Below is a
+sample code describing how to use the serialization interface.
 
 ```haskell
-    import Data.Binary 
-    import Data.Binary.Get 
-    import Data.Binary.Put 
-    import Data.ByteString
+    import Data.Binary (encode, decodeOrFail)
+    import Data.ByteString.Lazy (ByteString)
+    import Haskoin.Crypto 
 
     -- toByteString and fromByteString are only example functions
     -- They are not exported by Haskoin.Crypto
-    toByteString :: PublicKey -> Data.ByteString
-    toByteString key = runPut $ put key
+    toByteString :: PublicKey -> ByteString
+    toByteString key = encode key
     
-    fromByteString :: Data.ByteString -> PublicKey
-    fromByteString bs = runGet get bs
+    fromByteString :: ByteString -> PublicKey
+    fromByteString bs = case decodeOrFail bs of
+        (Left  (_, _, err)) -> error err
+        (Right (_, _, res)) -> res :: PublicKey
 ```
 
 An uncompressed public key will store both **x** and **y** components of a
@@ -234,22 +242,23 @@ Data type describing an `ECDSA` signature.
 hash of a message.
 
 A `Signature` is an instance of `Data.Binary` and can be
-serialized/de-serialized using the `Get` and `Put` monads. Below is a code
-example describing how to use the serialization interface.
+serialized/de-serialized using the `encode` and `decodeOrFail` functions. Below
+is an example describing how to use the serialization interface.
 
 ```haskell
-    import Data.Binary 
-    import Data.Binary.Get 
-    import Data.Binary.Put 
-    import Data.ByteString
+    import Data.Binary (encode, decodeOrFail)
+    import Data.ByteString.Lazy (ByteString)
+    import Haskoin.Crypto 
 
     -- toByteString and fromByteString are only example functions
     -- They are not exported by Haskoin.Crypto
-    toByteString :: Signature -> Data.ByteString
-    toByteString sig = runPut $ put key
+    toByteString :: Signature -> ByteString
+    toByteString sig = encode sig
     
-    fromByteString :: Data.ByteString -> Signature
-    fromByteString bs = runGet get bs
+    fromByteString :: ByteString -> Signature
+    fromByteString bs = case decodeOrFail bs of
+        (Left  (_, _, err)) -> error err
+        (Right (_, _, res)) -> res :: Signature
 ```
 
 ### Digests

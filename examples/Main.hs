@@ -2,9 +2,7 @@ import Haskoin.Crypto
 import Haskoin.Crypto.Util (bsToInteger)
 
 -- For serializing/de-serializing interface
-import Data.Binary
-import Data.Binary.Put
-import Data.Binary.Get
+import Data.Binary (encode, decodeOrFail)
 
 -- Access to /dev/random
 import System.IO
@@ -33,10 +31,12 @@ main = do
         -- Deserialize a private key from WIF format
         priv' = fromWIF wif
 
-        -- Serialize a public key
-    let pubBin = runPut $ put pub
-        -- Deserialize a public key
-        pub'   = runGet get pubBin :: PublicKey
+        -- Serialize and de-serialize a public key
+        -- See Data.Binary for more details
+    let pubBin = encode pub
+        pub'   = case decodeOrFail pubBin of
+            (Left  (_, _, err)) -> error err
+            (Right (_, _, res)) -> res :: PublicKey
 
     -- Generate a random seed to create signature nonces
     seed <- random256
@@ -55,10 +55,13 @@ main = do
         let ver1 = verifyMessage hash sig1 pub
             ver2 = verifyMessage hash sig2 pub
 
-            -- Serialize a signature 
-        let sigBin = runPut $ put sig1
+            -- Serialize and de-serialize a signature
+            -- See Data.Binary for more details
+        let sigBin = encode sig1
             -- Deserialize a signature
-            sig1'  = runGet get sigBin :: Signature
+            sig1'  = case decodeOrFail sigBin of
+                (Left  (_, _, err)) -> error err
+                (Right (_, _, res)) -> res :: Signature
 
         return ()
 
