@@ -344,7 +344,7 @@ The tests can take a few minutes to run.
 ### Benchmarks
 
 ```sh
-    cabal configure --enable-benchmark
+    cabal configure --enable-benchmarks
     cabal build
     cabal bench
 ```
@@ -415,3 +415,4 @@ You can support the project by donating in [Bitcoins](http://www.bitcoin.org)
 to:
 
 **176CwMCWMq1y9CxFZWk7Vfoka5PoaNzxRq**
+
