@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
+import Data.Maybe
 import Data.Time.Clock
 import System.Random
 import Control.Monad
@@ -32,7 +33,8 @@ main = do
         msg   = fromInteger $ curveN - 10
 
     !priv <- replicateM elems $
-                makePrivateKey <$> getStdRandom (randomR (1, curveN))
+                (fromJust . makePrivateKey) <$> 
+                getStdRandom (randomR (1, curveN))
 
     !pub <- bench elems "Point multiplications" $ forM priv $ \x -> 
         return $! derivePublicKey x
