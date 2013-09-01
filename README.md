@@ -162,6 +162,12 @@ Note that the Integer is your secret for the private key and it needs to be
 drawn from a random source containing at least 256 bits of entropy. We can not
 be held accountable if you are using a bad random number generator. 
 
+To recover the secret in a PrivateKey:
+
+```haskell
+  fromPrivateKey :: PrivateKey -> Integer
+```
+
 You can derive a `PublicKey` from a `PrivateKey`:
 
 ```haskell
