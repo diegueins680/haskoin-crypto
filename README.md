@@ -270,7 +270,12 @@ the `Data.Word` package, except with 160 and 256 bits. We use these types as
 opposed to Integers to convey the information that we are dealing with hashes
 produced by digest functions rather than arbitrary integers. 
 
+The `Hash512` type is also supported for its use in the implementation of
+hierarchical deterministic wallets (HDW) although it's not directly used in the
+Bitcoin protocol itself.
+
 ```haskell
+    type Hash512 = Ring Mod512
     type Hash256 = Ring Mod256
     type Hash160 = Ring Mod160
 ```
@@ -278,16 +283,20 @@ produced by digest functions rather than arbitrary integers.
 The following message digest functions are exported by the library
 
 ```haskell
+    -- Single round of SHA-512
+    hash512   :: Data.ByteString -> Hash512
+    hash512BS :: Data.ByteString -> Data.ByteString
+
     -- Single round of SHA-256
-    hash256 :: Data.ByteString -> Hash256
+    hash256   :: Data.ByteString -> Hash256
     hash256BS :: Data.ByteString -> Data.ByteString
 
     -- Single round of RIPEMD-160
-    hash160 :: Data.ByteString -> Hash160
+    hash160   :: Data.ByteString -> Hash160
     hash160BS :: Data.ByteString -> Data.ByteString
 
     -- Double round of SHA-256
-    doubleHash256 :: Data.ByteString -> Hash256
+    doubleHash256   :: Data.ByteString -> Hash256
     doubleHash256BS :: Data.ByteString -> Data.ByteString
 ```
 

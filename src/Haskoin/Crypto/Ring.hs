@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE EmptyDataDecls #-}
 module Haskoin.Crypto.Ring
-( Hash256
+( Hash512
+, Hash256
 , Hash160
 , FieldP
 , FieldN
@@ -11,6 +12,7 @@ module Haskoin.Crypto.Ring
 , curveP
 , toFieldN
 , toFieldP
+, toMod512
 , toMod256
 , toMod160
 , inverseP
@@ -58,11 +60,13 @@ import Haskoin.Crypto.Util
     , integerToBS
     )
 
+type Hash512 = Ring Mod512
 type Hash256 = Ring Mod256
 type Hash160 = Ring Mod160
 type FieldP  = Ring ModP
 type FieldN  = Ring ModN
 
+data Mod512
 data Mod256 
 data Mod160
 data ModP
@@ -83,6 +87,9 @@ toFieldN (Ring i) = fromInteger i
 toFieldP :: Ring n -> FieldP
 toFieldP (Ring i) = fromInteger i
 
+toMod512 :: Ring n -> Hash512
+toMod512 (Ring i) = fromInteger i
+
 toMod256 :: Ring n -> Hash256
 toMod256 (Ring i) = fromInteger i
 
@@ -99,12 +106,16 @@ class RingMod a where
     rFromInteger :: Integer -> Ring a
     rBitSize     :: Ring a -> Int
 
+instance RingMod Mod512 where
+    rFromInteger i = Ring $ i `mod` 2 ^ (512 :: Int)
+    rBitSize     _ = 512
+
 instance RingMod Mod256 where
-    rFromInteger i = Ring $ i `mod` 2 ^ (256 :: Integer)
+    rFromInteger i = Ring $ i `mod` 2 ^ (256 :: Int)
     rBitSize     _ = 256
 
 instance RingMod Mod160 where
-    rFromInteger i = Ring $ i `mod` 2 ^ (160 :: Integer)
+    rFromInteger i = Ring $ i `mod` 2 ^ (160 :: Int)
     rBitSize     _ = 160
 
 instance RingMod ModP where
@@ -183,14 +194,23 @@ instance Fractional (Ring ModN) where
 
 {- Binary instances for serialization / deserialization -}
 
+instance Binary (Ring Mod512) where
+    get = do
+        a <- fromIntegral <$> (get :: Get Hash256)
+        b <- fromIntegral <$> (get :: Get Hash256)
+        return $ (a `shiftL` 256) + b
+
+    put (Ring i) = do
+        put $ (fromIntegral (i `shiftR` 256) :: Hash256)
+        put $ (fromIntegral i :: Hash256)
+
 instance Binary (Ring Mod256) where
     get = do
         a <- fromIntegral <$> getWord64be
         b <- fromIntegral <$> getWord64be
         c <- fromIntegral <$> getWord64be
         d <- fromIntegral <$> getWord64be
-        return $ fromInteger $
-            (a `shiftL` 192) + (b `shiftL` 128) + (c `shiftL` 64) + d
+        return $ (a `shiftL` 192) + (b `shiftL` 128) + (c `shiftL` 64) + d
 
     put (Ring i) = do
         putWord64be $ fromIntegral (i `shiftR` 192)
@@ -203,7 +223,7 @@ instance Binary (Ring Mod160) where
         a <- fromIntegral <$> getWord32be
         b <- fromIntegral <$> getWord64be
         c <- fromIntegral <$> getWord64be
-        return $ fromInteger $ (a `shiftL` 128) + (b `shiftL` 64) + c
+        return $ (a `shiftL` 128) + (b `shiftL` 64) + c
 
     put (Ring i) = do
         putWord32be $ fromIntegral (i `shiftR` 128)

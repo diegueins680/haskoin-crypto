@@ -1,9 +1,12 @@
 module Haskoin.Crypto.Hash
-( Hash256
+( Hash512
+, Hash256
 , Hash160
 , CheckSum32
+, hash512
 , hash256
 , hash160
+, hash512BS
 , hash256BS
 , hash160BS
 , doubleHash256
@@ -14,6 +17,7 @@ module Haskoin.Crypto.Hash
 import Data.Word (Word32)
 import Crypto.Hash 
     ( Digest 
+    , SHA512
     , SHA256
     , RIPEMD160
     , hash
@@ -26,7 +30,7 @@ import Control.Applicative ((<$>))
 
 import qualified Data.ByteString as BS (ByteString)
 
-import Haskoin.Crypto.Ring (Hash256, Hash160)
+import Haskoin.Crypto.Ring (Hash512, Hash256, Hash160)
 import Haskoin.Util (toLazyBS)
 
 newtype CheckSum32 = CheckSum32 { runCheckSum32 :: Word32 }
@@ -36,11 +40,20 @@ instance Binary CheckSum32 where
     get = CheckSum32 <$> get
     put (CheckSum32 w) = put w
 
+run512 :: BS.ByteString -> BS.ByteString
+run512 = (digestToByteString :: Digest SHA512 -> BS.ByteString) . hash
+
 run256 :: BS.ByteString -> BS.ByteString
 run256 = (digestToByteString :: Digest SHA256 -> BS.ByteString) . hash
 
 run160 :: BS.ByteString -> BS.ByteString
 run160 = (digestToByteString :: Digest RIPEMD160 -> BS.ByteString) . hash
+
+hash512 :: BS.ByteString -> Hash512
+hash512 bs = runGet get (toLazyBS $ run512 bs)
+
+hash512BS :: BS.ByteString -> BS.ByteString
+hash512BS bs = run512 bs
 
 hash256 :: BS.ByteString -> Hash256
 hash256 bs = runGet get (toLazyBS $ run256 bs)

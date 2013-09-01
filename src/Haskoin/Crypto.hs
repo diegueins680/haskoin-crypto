@@ -8,9 +8,12 @@ module Haskoin.Crypto
 , verifyMessage
 
 -- Hash module
+, Hash512
 , Hash256
 , Hash160
 , CheckSum32
+, hash512
+, hash512BS
 , hash256
 , hash256BS
 , hash160

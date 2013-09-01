@@ -69,6 +69,7 @@ tests =
         ],
       testGroup "Ring Binary"
         [ testProperty "get( put(Integer) ) = Integer" getPutInteger
+        , testProperty "get( put(Hash512) ) = Hash512" getPutHash512
         , testProperty "get( put(Hash256) ) = Hash256" getPutHash256
         , testProperty "get( put(Hash160) ) = Hash160" getPutHash160
         , testProperty "get( put(FieldP) ) = FieldP" getPutModP
@@ -257,6 +258,9 @@ getPutInteger :: Integer -> Bool
 getPutInteger i = (bsToInteger $ integerToBS p) == p
     where p = abs i
 
+getPutHash512 :: Hash512 -> Bool
+getPutHash512 r = r == runGet get (runPut $ put r)
+
 getPutHash256 :: Hash256 -> Bool
 getPutHash256 r = r == runGet get (runPut $ put r)
 
@@ -285,5 +289,4 @@ putModNSize r = r > 0 ==>
           b  = BS.index bs 1
           c  = BS.index bs 2
           l  = BS.length bs
-
 
