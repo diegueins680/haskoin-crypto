@@ -25,6 +25,8 @@ tests =
     [ testGroup "PublicKey Binary"
         [ testProperty "get( put(PublicKey) ) = PublicKey" getPutPoint
         , testProperty "size( put(Point) ) = 33 or 65" putPointSize
+        , testProperty "makeKey( toKey(k) ) = k" makeToKey
+        , testProperty "makeKeyU( toKey(k) ) = k" makeToKeyU
         ],
       testGroup "Key formats"
         [ testProperty "fromWIF( toWIF(i) ) = i" fromToWIF
@@ -52,6 +54,14 @@ putPointSize p = case p of
     (PublicKeyU InfPoint) -> BS.length s == 1
     (PublicKeyU _)        -> BS.length s == 65
     where s = toStrictBS $ runPut $ put p
+
+makeToKey :: FieldN -> Property
+makeToKey i = i /= 0 ==> 
+    (fromPrivateKey $ makePrivateKey (fromIntegral i)) == (fromIntegral i)
+
+makeToKeyU :: FieldN -> Property
+makeToKeyU i = i /= 0 ==> 
+    (fromPrivateKey $ makePrivateKeyU (fromIntegral i)) == (fromIntegral i)
 
 {- Key formats -}
 

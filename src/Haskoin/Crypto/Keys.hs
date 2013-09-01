@@ -6,6 +6,7 @@ module Haskoin.Crypto.Keys
 , validatePublicKey
 , makePrivateKey
 , makePrivateKeyU
+, fromPrivateKey
 , isCompressed
 , isPrivateKeyCompressed
 , fromWIF
@@ -88,6 +89,9 @@ makePrivateKeyU i
     | isValidPrivkey i = PrivateKeyU $ fromInteger i
     | otherwise         = error $ "Invalid private key: " ++ (show i)
 
+fromPrivateKey :: PrivateKey -> Integer
+fromPrivateKey = fromIntegral . runPrivateKey
+
 isCompressed :: PublicKey -> Bool
 isCompressed (PublicKey  _) = True
 isCompressed (PublicKeyU _) = False
@@ -95,7 +99,7 @@ isCompressed (PublicKeyU _) = False
 isPrivateKeyCompressed :: PrivateKey -> Bool
 isPrivateKeyCompressed (PrivateKey  _) = True
 isPrivateKeyCompressed (PrivateKeyU _) = False
-    
+
 instance Binary PublicKey where
 
     -- Section 2.3.4 http://www.secg.org/download/aid-780/sec1-v2.pdf
