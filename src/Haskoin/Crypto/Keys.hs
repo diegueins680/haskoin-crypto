@@ -31,7 +31,7 @@ import qualified Data.ByteString as BS
     )
 import Haskoin.Crypto.Ring 
     ( FieldN, FieldP
-    , isValidPrivkey
+    , isIntegerValidKey
     , quadraticResidue
     , toMod256
     )
@@ -78,16 +78,16 @@ validatePublicKey :: PublicKey -> Bool
 validatePublicKey = validatePoint . runPublicKey
 
 -- Integer needs to be a random number with at least 256 bits of entropy
-makePrivateKey :: Integer -> PrivateKey
+makePrivateKey :: Integer -> Maybe PrivateKey
 makePrivateKey i
-    | isValidPrivkey i = PrivateKey $ fromInteger i
-    | otherwise         = error $ "Invalid private key: " ++ (show i)
+    | isIntegerValidKey i = Just $ PrivateKey $ fromInteger i
+    | otherwise        = Nothing
 
 -- Integer needs to be a random number with at least 256 bits of entropy
-makePrivateKeyU :: Integer -> PrivateKey
+makePrivateKeyU :: Integer -> Maybe PrivateKey
 makePrivateKeyU i
-    | isValidPrivkey i = PrivateKeyU $ fromInteger i
-    | otherwise         = error $ "Invalid private key: " ++ (show i)
+    | isIntegerValidKey i = Just $ PrivateKeyU $ fromInteger i
+    | otherwise        = Nothing
 
 fromPrivateKey :: PrivateKey -> Integer
 fromPrivateKey = fromIntegral . runPrivateKey
@@ -156,13 +156,11 @@ fromWIF bs = do
     case BS.length b of
         33 -> do               -- Uncompressed format
             let i = bsToInteger (BS.tail b)
-            guard (isValidPrivkey i)   
-            return $ PrivateKeyU $ fromInteger i
+            makePrivateKeyU i
         34 -> do               -- Compressed format
             guard (BS.last b == 0x01) 
             let i = bsToInteger $ BS.tail $ BS.init b
-            guard (isValidPrivkey i)
-            return $ PrivateKey $ fromInteger i
+            makePrivateKey i
         _  -> Nothing          -- Bad length
 
 toWIF :: PrivateKey -> BS.ByteString

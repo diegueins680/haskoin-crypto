@@ -37,6 +37,7 @@ which provides the following advantages:
     import System.IO
     import qualified Data.ByteString as BS
 
+    import Data.Maybe (fromJust)
     import Control.Applicative ((<$>))
 
     -- Generate a random Integer with 256 bits of entropy
@@ -49,7 +50,8 @@ which provides the following advantages:
     main = do
 
         -- Create a private key from a random source
-        priv <- makePrivateKey <$> random256
+        -- Will fail if random256 is not > 0 and < curve order N
+        priv <- (fromJust . makePrivateKey) <$> random256
 
             -- Derive the public key from a private key
         let pub   = derivePublicKey priv
@@ -154,18 +156,27 @@ parity of **y**.
 To create a private key from an Integer, you can use either:
 
 ```haskell
-    makePrivateKey  :: Integer -> PrivateKey -- Compressed format
-    makePrivateKeyU :: Integer -> PrivateKey -- Uncompressed format
+    makePrivateKey  :: Integer -> Maybe PrivateKey -- Compressed format
+    makePrivateKeyU :: Integer -> Maybe PrivateKey -- Uncompressed format
 ```
+
+These functions can return `Nothing` if the Integer is <= 0 or >= than the
+curve order N.
 
 Note that the Integer is your secret for the private key and it needs to be
 drawn from a random source containing at least 256 bits of entropy. We can not
 be held accountable if you are using a bad random number generator. 
 
-To recover the secret in a PrivateKey:
+To recover the secret (as `Integer`) in a `PrivateKey`:
 
 ```haskell
-  fromPrivateKey :: PrivateKey -> Integer
+    fromPrivateKey :: PrivateKey -> Integer
+```
+
+To test if an Integer would make a valid `PrivateKey` (i > 0 && i < N):
+
+```haskell
+    isIntegerValidKey :: Integer -> Bool
 ```
 
 You can derive a `PublicKey` from a `PrivateKey`:

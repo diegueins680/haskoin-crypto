@@ -8,6 +8,7 @@ import Data.Binary (encode, decodeOrFail)
 import System.IO
 import qualified Data.ByteString as BS
 
+import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
 
 -- Generate a random Integer with 256 bits of entropy
@@ -20,7 +21,8 @@ main :: IO ()
 main = do
 
     -- Create a private key from a random source
-    priv <- makePrivateKey <$> random256
+    -- Will fail if random256 is not > 0 and < curve order N
+    priv <- (fromJust . makePrivateKey) <$> random256
 
         -- Derive the public key from a private key
     let pub   = derivePublicKey priv

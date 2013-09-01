@@ -18,7 +18,7 @@ module Haskoin.Crypto.Ring
 , inverseP
 , inverseN
 , quadraticResidue
-, isValidPrivkey
+, isIntegerValidKey
 ) where
 
 import Data.Bits 
@@ -241,7 +241,7 @@ instance Binary (Ring ModN) where
         unless (l <= 33) (fail $
             "Bad DER length " ++ (show l) ++ ". Expecting length <= 33" )
         i <- bsToInteger <$> getByteString (fromIntegral l)
-        unless (isValidPrivkey i) (fail $ "Invalid private key " ++ (show i))
+        unless (isIntegerValidKey i) (fail $ "Invalid private key " ++ (show i))
         return $ fromInteger i
 
     put (Ring 0) = error "0 is an invalid FieldN element to serialize"
@@ -276,6 +276,6 @@ quadraticResidue x = guard (y^2 == x) >> [y, (-y)]
     where q = (curveP + 1) `div` 4
           y = x^q
 
-isValidPrivkey :: Integer -> Bool
-isValidPrivkey i = i > 0 && i < curveN
+isIntegerValidKey :: Integer -> Bool
+isIntegerValidKey i = i > 0 && i < curveN
 

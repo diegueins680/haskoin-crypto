@@ -26,6 +26,7 @@ module Haskoin.Crypto
 , PublicKey
 , PrivateKey
 , derivePublicKey
+, validatePublicKey
 , publicKeyAddress
 , makePrivateKey
 , makePrivateKeyU
@@ -35,10 +36,16 @@ module Haskoin.Crypto
 , fromWIF
 , toWIF
 
+-- Ring module
+, FieldN
+, FieldP
+, isIntegerValidKey
+
 ) where
 
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Hash
+import Haskoin.Crypto.Ring
 
 

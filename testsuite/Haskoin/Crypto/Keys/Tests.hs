@@ -57,11 +57,13 @@ putPointSize p = case p of
 
 makeToKey :: FieldN -> Property
 makeToKey i = i /= 0 ==> 
-    (fromPrivateKey $ makePrivateKey (fromIntegral i)) == (fromIntegral i)
+    (fromPrivateKey $ makeKey (fromIntegral i)) == (fromIntegral i)
+    where makeKey = fromJust . makePrivateKey
 
 makeToKeyU :: FieldN -> Property
 makeToKeyU i = i /= 0 ==> 
-    (fromPrivateKey $ makePrivateKeyU (fromIntegral i)) == (fromIntegral i)
+    (fromPrivateKey $ makeKey (fromIntegral i)) == (fromIntegral i)
+    where makeKey = fromJust . makePrivateKeyU
 
 {- Key formats -}
 
@@ -73,19 +75,23 @@ fromToWIF pk = i > 0 ==> pk == (fromJust $ fromWIF $ toWIF pk)
 
 testCompressed :: FieldN -> Property
 testCompressed n = n > 0 ==> 
-    isCompressed $ derivePublicKey $ makePrivateKey (fromIntegral n)
+    isCompressed $ derivePublicKey $ makeKey (fromIntegral n)
+    where makeKey = fromJust . makePrivateKey
 
 testUnCompressed :: FieldN -> Property
 testUnCompressed n = n > 0 ==> 
-    not $ isCompressed $ derivePublicKey $ makePrivateKeyU (fromIntegral n)
+    not $ isCompressed $ derivePublicKey $ makeKey (fromIntegral n)
+    where makeKey = fromJust . makePrivateKeyU
 
 testPrivateCompressed :: FieldN -> Property
 testPrivateCompressed n = n > 0 ==> 
-    isPrivateKeyCompressed $ makePrivateKey (fromIntegral n)
+    isPrivateKeyCompressed $ makeKey (fromIntegral n)
+    where makeKey = fromJust . makePrivateKey
 
 testPrivateUnCompressed :: FieldN -> Property
 testPrivateUnCompressed n = n > 0 ==> 
-    not $ isPrivateKeyCompressed $ makePrivateKeyU (fromIntegral n)
+    not $ isPrivateKeyCompressed $ makeKey (fromIntegral n)
+    where makeKey = fromJust . makePrivateKeyU
 
 testDerivedPublicKey :: PrivateKey -> Bool
 testDerivedPublicKey k = validatePublicKey $ derivePublicKey k
