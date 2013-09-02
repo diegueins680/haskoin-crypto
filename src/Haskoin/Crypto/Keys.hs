@@ -7,6 +7,8 @@ module Haskoin.Crypto.Keys
 , makePrivateKey
 , makePrivateKeyU
 , fromPrivateKey
+, addPrivateKeys
+, addPublicKeys
 , isCompressed
 , isPrivateKeyCompressed
 , fromWIF
@@ -39,6 +41,7 @@ import Haskoin.Crypto.Point
     ( Point( InfPoint )
     , makePoint
     , mulPoint 
+    , addPoint
     , getAffine
     , curveB
     , validatePoint
@@ -91,6 +94,24 @@ makePrivateKeyU i
 
 fromPrivateKey :: PrivateKey -> Integer
 fromPrivateKey = fromIntegral . runPrivateKey
+
+-- Adding private keys together. Provides support for HDW (BIP32)
+addPrivateKeys :: PrivateKey -> PrivateKey -> Maybe PrivateKey
+addPrivateKeys (PrivateKey  r1) (PrivateKey  r2) = 
+    makePrivateKey  $ toInteger $ r1 + r2
+addPrivateKeys (PrivateKeyU r1) (PrivateKeyU r2) = 
+    makePrivateKeyU $ toInteger $ r1 + r2
+addPrivateKeys _ _ = error "Adding incompatible private keys"
+
+-- Adding public keys together. Provides support for HDW (BIP32)
+addPublicKeys :: PublicKey -> PublicKey -> Maybe PublicKey
+addPublicKeys (PublicKey  p1) (PublicKey  p2) = case addPoint p1 p2 of
+    InfPoint -> Nothing
+    p3       -> Just $ PublicKey  p3
+addPublicKeys (PublicKeyU p1) (PublicKeyU p2) = case addPoint p1 p2 of
+    InfPoint -> Nothing
+    p3       -> Just $ PublicKeyU p3
+addPublicKeys _ _ = error "Adding incompatible public keys"
 
 isCompressed :: PublicKey -> Bool
 isCompressed (PublicKey  _) = True

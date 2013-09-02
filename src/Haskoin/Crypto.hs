@@ -31,6 +31,8 @@ module Haskoin.Crypto
 , makePrivateKey
 , makePrivateKeyU
 , fromPrivateKey
+, addPrivateKeys
+, addPublicKeys
 , isCompressed
 , isPrivateKeyCompressed
 , fromWIF
