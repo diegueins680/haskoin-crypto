@@ -1,5 +1,5 @@
 import Haskoin.Crypto
-import Haskoin.Crypto.Util (bsToInteger)
+import Haskoin.Util (bsToInteger)
 
 -- For serializing/de-serializing interface
 import Data.Binary (encode, decodeOrFail)
