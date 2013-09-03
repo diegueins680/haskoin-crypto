@@ -26,7 +26,7 @@ import qualified Data.ByteString as BS (length)
 import Haskoin.Crypto.Hash (hash256)
 import Haskoin.Crypto.Keys (PrivateKey(..), PublicKey(..), curveG)
 import Haskoin.Util (toStrictBS, isolate)
-import Haskoin.Crypto.Util (integerToBS)
+import Haskoin.Util (integerToBS)
 import Haskoin.Crypto.Point 
     ( Point
     , getAffine, makePoint

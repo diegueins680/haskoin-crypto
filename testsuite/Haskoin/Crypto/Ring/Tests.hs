@@ -17,7 +17,6 @@ import QuickCheckUtils
 
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.NumberTheory
-import Haskoin.Crypto.Util
 import Haskoin.Util
 
 tests :: [Test]
@@ -68,8 +67,7 @@ tests =
         , testProperty "Ring toInteger" ringToInteger
         ],
       testGroup "Ring Binary"
-        [ testProperty "get( put(Integer) ) = Integer" getPutInteger
-        , testProperty "get( put(Hash512) ) = Hash512" getPutHash512
+        [ testProperty "get( put(Hash512) ) = Hash512" getPutHash512
         , testProperty "get( put(Hash256) ) = Hash256" getPutHash256
         , testProperty "get( put(Hash160) ) = Hash160" getPutHash160
         , testProperty "get( put(FieldP) ) = FieldP" getPutModP
@@ -253,10 +251,6 @@ ringToInteger :: Test32 -> Bool
 ringToInteger r@(Ring i) = toInteger r == i
 
 {- Ring Binary -}
-
-getPutInteger :: Integer -> Bool
-getPutInteger i = (bsToInteger $ integerToBS p) == p
-    where p = abs i
 
 getPutHash512 :: Hash512 -> Bool
 getPutHash512 r = r == runGet get (runPut $ put r)

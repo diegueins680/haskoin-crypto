@@ -16,7 +16,6 @@ import QuickCheckUtils
 
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Point
-import Haskoin.Crypto.Util
 import Haskoin.Crypto.Ring
 import Haskoin.Util
 

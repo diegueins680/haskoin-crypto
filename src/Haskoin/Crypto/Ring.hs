@@ -55,10 +55,7 @@ import qualified Data.ByteString as BS
     )
 
 import Haskoin.Crypto.NumberTheory (mulInverse)
-import Haskoin.Crypto.Util 
-    ( bsToInteger
-    , integerToBS
-    )
+import Haskoin.Util (bsToInteger, integerToBS)
 
 type Hash512 = Ring Mod512
 type Hash256 = Ring Mod256

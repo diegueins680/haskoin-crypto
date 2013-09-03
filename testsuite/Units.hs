@@ -14,7 +14,6 @@ import Haskoin.Crypto.Ring
 import Haskoin.Crypto.Point
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Hash
-import Haskoin.Crypto.Util
 import Haskoin.Util
 
 -- Unit tests copied from bitcoind implementation

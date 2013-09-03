@@ -17,7 +17,6 @@ cabal-version:         >= 1.9.2
 library
     exposed-modules:   Haskoin.Crypto
     other-modules:     Haskoin.Crypto.NumberTheory, 
-                       Haskoin.Crypto.Util, 
                        Haskoin.Crypto.Hash, 
                        Haskoin.Crypto.Ring,
                        Haskoin.Crypto.Point, 

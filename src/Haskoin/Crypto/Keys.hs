@@ -48,8 +48,7 @@ import Haskoin.Crypto.Point
     )
 import Haskoin.Crypto.Base58 (encodeBase58Check, decodeBase58Check)
 import Haskoin.Crypto.Hash (hash160BS, hash256BS)
-import Haskoin.Crypto.Util (bsToInteger)
-import Haskoin.Util (toStrictBS)
+import Haskoin.Util (toStrictBS, bsToInteger)
 
 curveG :: Point
 curveG = fromJust $ makePoint
