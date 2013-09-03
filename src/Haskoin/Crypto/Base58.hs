@@ -23,7 +23,7 @@ import Haskoin.Crypto.Hash
     , hash256BS
     )
 import Haskoin.Crypto.Util (integerToBS, bsToInteger)
-import Haskoin.Util (toStrictBS)
+import Haskoin.Util (encode')
 
 b58String :: String
 b58String = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -72,7 +72,7 @@ decodeBase58 bs = r >>= return . (BS.append prefix)
 
 encodeBase58Check :: BS.ByteString -> BS.ByteString
 encodeBase58Check bs = encodeBase58 $ BS.append bs chk
-    where chk = toStrictBS $ encode (chksum32 bs)
+    where chk = encode' $ chksum32 bs
 
 -- decoding fails if the bytestring contains invalid base58 characters
 -- or if the checksum doesn't match
@@ -80,6 +80,6 @@ decodeBase58Check :: BS.ByteString -> Maybe BS.ByteString
 decodeBase58Check bs = do
     rs <- decodeBase58 bs
     let (res,chk) = BS.splitAt ((BS.length rs) - 4) rs
-    guard $ chk == (toStrictBS $ encode (chksum32 res))
+    guard $ chk == (encode' $ chksum32 res)
     return res
 

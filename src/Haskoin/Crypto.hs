@@ -38,6 +38,12 @@ module Haskoin.Crypto
 , fromWIF
 , toWIF
 
+-- Base58 module
+, encodeBase58
+, decodeBase58
+, encodeBase58Check
+, decodeBase58Check
+
 -- Ring module
 , FieldN
 , FieldP
@@ -49,5 +55,6 @@ import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Hash
 import Haskoin.Crypto.Ring
+import Haskoin.Crypto.Base58
 
 
