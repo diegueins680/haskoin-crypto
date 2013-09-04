@@ -33,26 +33,26 @@ main = do
         msg   = fromInteger $ curveN - 10
 
     !priv <- replicateM elems $
-                (fromJust . makePrivateKey) <$> 
+                (fromJust . makePrvKey) <$> 
                 getStdRandom (randomR (1, curveN))
 
     !pub <- bench elems "Point multiplications" $ forM priv $ \x -> 
-        return $! derivePublicKey x
+        return $! derivePubKey x
 
     bench 100000 "Point additions" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
-            let !a = runPublicKey x
+            let !a = runPubKey x
             return $! addPoint a a
 
     bench 100000 "Point doubling" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
-            let !a = runPublicKey x
+            let !a = runPubKey x
             return $! doublePoint a
 
     bench elems "Shamirs trick" $ 
         forM (priv `zip` pub) $ \(d,q) -> do
-            let !a = runPrivateKey d
-                !b = runPublicKey q
+            let !a = runPrvKey d
+                !b = runPubKey q
             return $! shamirsTrick a b a b
 
     !sigs <- bench elems "Signature creations" $ 
@@ -60,7 +60,7 @@ main = do
         
     bench elems "Signature verifications" $ 
         forM (sigs `zip` pub) $ \(s,q) -> 
-            return $! verifyMessage msg s q
+            return $! verifySignature msg s q
 
 testRing :: Int -> FieldN
 testRing max = go 2 0

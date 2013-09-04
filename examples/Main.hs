@@ -22,23 +22,23 @@ main = do
 
     -- Create a private key from a random source
     -- Will fail if random256 is not > 0 and < curve order N
-    priv <- (fromJust . makePrivateKey) <$> random256
+    prv <- (fromJust . makePrvKey) <$> random256
 
         -- Derive the public key from a private key
-    let pub   = derivePublicKey priv
+    let pub   = derivePubKey prv
         -- Compute the bitcoin address from the public key
-        addr  = publicKeyAddress pub
+        addr  = pubKeyAddr pub
         -- Serialize the private key to WIF format
-        wif   = toWIF priv
+        wif   = toWIF prv
         -- Deserialize a private key from WIF format
-        priv' = fromWIF wif
+        prv' = fromWIF wif
 
         -- Serialize and de-serialize a public key
         -- See Data.Binary for more details
     let pubBin = encode pub
         pub'   = case decodeOrFail pubBin of
             (Left  (_, _, err)) -> error err
-            (Right (_, _, res)) -> res :: PublicKey
+            (Right (_, _, res)) -> res :: PubKey
 
     -- Generate a random seed to create signature nonces
     seed <- random256
@@ -50,12 +50,12 @@ main = do
             hash = doubleHash256 msg
 
         -- Signatures are guaranteed to use different nonces
-        sig1 <- signMessage hash priv
-        sig2 <- signMessage hash priv
+        sig1 <- signMessage hash prv
+        sig2 <- signMessage hash prv
 
         -- Verify signatures
-        let ver1 = verifyMessage hash sig1 pub
-            ver2 = verifyMessage hash sig2 pub
+        let ver1 = verifySignature hash sig1 pub
+            ver2 = verifySignature hash sig2 pub
 
             -- Serialize and de-serialize a signature
             -- See Data.Binary for more details
@@ -67,6 +67,6 @@ main = do
 
         return ()
 
-    print $ (show priv)
+    print $ (show prv)
     print $ (show seed)
 

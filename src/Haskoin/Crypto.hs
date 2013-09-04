@@ -5,7 +5,7 @@ module Haskoin.Crypto
 , Signature
 , withECDSA
 , signMessage
-, verifyMessage
+, verifySignature
 
 -- Hash module
 , Hash512
@@ -23,18 +23,22 @@ module Haskoin.Crypto
 , chksum32
 
 -- Keys module
-, PublicKey
-, PrivateKey
-, derivePublicKey
-, validatePublicKey
-, publicKeyAddress
-, makePrivateKey
-, makePrivateKeyU
-, fromPrivateKey
-, addPrivateKeys
-, addPublicKeys
-, isCompressed
-, isPrivateKeyCompressed
+, PubKey(..)
+, isValidPubKey
+, isPubKeyU
+, derivePubKey
+, pubKeyAddr
+, addPubKeys
+, PrvKey(..)
+, isValidPrvKey
+, makePrvKey
+, makePrvKeyU
+, fromPrvKey
+, isPrvKeyU
+, addPrvKeys
+, putPrvKey
+, getPrvKey
+, getPrvKeyU
 , fromWIF
 , toWIF
 
@@ -44,17 +48,10 @@ module Haskoin.Crypto
 , encodeBase58Check
 , decodeBase58Check
 
--- Ring module
-, FieldN
-, FieldP
-, isIntegerValidKey
-
 ) where
 
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Hash
-import Haskoin.Crypto.Ring
 import Haskoin.Crypto.Base58
-
 

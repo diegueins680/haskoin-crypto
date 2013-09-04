@@ -16,6 +16,12 @@ import Haskoin.Crypto.Keys
 data Mod32
 type Test32  = Ring Mod32
 
+newtype TestPrvKeyC = TestPrvKeyC { runTestPrvKeyC :: PrvKey }
+    deriving (Eq, Show)
+
+newtype TestPrvKeyU = TestPrvKeyU { runTestPrvKeyU :: PrvKey }
+    deriving (Eq, Show)
+
 instance RingMod Mod32 where
     rFromInteger i = Ring $ i `mod` 2 ^ (32 :: Integer)
     rBitSize     _ = 32
@@ -29,19 +35,29 @@ instance Arbitrary Point where
         , (9, (flip mulPoint $ curveG) <$> (arbitrary :: Gen FieldN))
         ]
 
-instance Arbitrary PublicKey where
-    arbitrary = derivePublicKey <$> (arbitrary :: Gen PrivateKey)
+instance Arbitrary TestPrvKeyC where
+    arbitrary = do
+        i <- fromInteger <$> choose (1, curveN-1)
+        return $ TestPrvKeyC $ PrvKey i
 
-instance Arbitrary PrivateKey where
+instance Arbitrary TestPrvKeyU where
+    arbitrary = do
+        i <- fromInteger <$> choose (1, curveN-1)
+        return $ TestPrvKeyU $ PrvKeyU i
+
+instance Arbitrary PrvKey where
     arbitrary = oneof
-        [ PrivateKey  <$> (fromInteger <$> choose (1, curveN-1))
-        , PrivateKeyU <$> (fromInteger <$> choose (1, curveN-1))
+        [ runTestPrvKeyC <$> (arbitrary :: Gen TestPrvKeyC)
+        , runTestPrvKeyU <$> (arbitrary :: Gen TestPrvKeyU)
         ]
+
+instance Arbitrary PubKey where
+    arbitrary = derivePubKey <$> (arbitrary :: Gen PrvKey)
 
 instance Arbitrary Signature where
     arbitrary = do
         i <- arbitrary :: Gen Integer
-        d <- arbitrary :: Gen PrivateKey
+        d <- arbitrary :: Gen PrvKey
         h <- arbitrary :: Gen Hash256
         return $ runIdentity $ withECDSA i (signMessage h d)
 

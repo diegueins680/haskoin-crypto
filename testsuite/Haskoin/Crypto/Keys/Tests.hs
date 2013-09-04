@@ -21,14 +21,15 @@ import Haskoin.Util
 
 tests :: [Test]
 tests = 
-    [ testGroup "PublicKey Binary"
-        [ testProperty "get( put(PublicKey) ) = PublicKey" getPutPoint
-        , testProperty "size( put(Point) ) = 33 or 65" putPointSize
+    [ testGroup "PubKey Binary"
+        [ testProperty "get( put(PubKey) ) = PubKey" getPutPubKey
+        , testProperty "size( put(Point) ) = 33 or 65" putPubKeySize
         , testProperty "makeKey( toKey(k) ) = k" makeToKey
         , testProperty "makeKeyU( toKey(k) ) = k" makeToKeyU
         ],
       testGroup "Key formats"
         [ testProperty "fromWIF( toWIF(i) ) = i" fromToWIF
+        , testProperty "get( put(PrvKey) )" getPutPrv
         ],
       testGroup "Key compression"
         [ testProperty "Compressed public key" testCompressed
@@ -37,61 +38,104 @@ tests =
         , testProperty "Uncompressed private key" testPrivateUnCompressed
         ],
       testGroup "Public Key"
-        [ testProperty "Derived public key valid" testDerivedPublicKey
+        [ testProperty "Derived public key valid" testDerivedPubKey
+        ],
+      testGroup "Key properties"
+        [ testProperty "PubKey addition" testAddPubKeyC
+        , testProperty "PubKeyU addition" testAddPubKeyU
+        , testProperty "PrvKey addition" testAddPrvKeyC
+        , testProperty "PrvKeyU addition" testAddPrvKeyU
         ]
     ]
 
 {- Public Key Binary -}
 
-getPutPoint :: PublicKey -> Bool
-getPutPoint p = p == runGet get (runPut $ put p)
+getPutPubKey :: PubKey -> Bool
+getPutPubKey p = p == (decode' $ encode' p)
 
-putPointSize :: PublicKey -> Bool
-putPointSize p = case p of
-    (PublicKey  InfPoint) -> BS.length s == 1
-    (PublicKey  _)        -> BS.length s == 33
-    (PublicKeyU InfPoint) -> BS.length s == 1
-    (PublicKeyU _)        -> BS.length s == 65
-    where s = toStrictBS $ runPut $ put p
+putPubKeySize :: PubKey -> Bool
+putPubKeySize p = case p of
+    (PubKey  InfPoint) -> BS.length bs == 1
+    (PubKey  _)        -> BS.length bs == 33
+    (PubKeyU InfPoint) -> BS.length bs == 1
+    (PubKeyU _)        -> BS.length bs == 65
+    where bs = encode' p
 
 makeToKey :: FieldN -> Property
 makeToKey i = i /= 0 ==> 
-    (fromPrivateKey $ makeKey (fromIntegral i)) == (fromIntegral i)
-    where makeKey = fromJust . makePrivateKey
+    (fromPrvKey $ makeKey (fromIntegral i)) == (fromIntegral i)
+    where makeKey = fromJust . makePrvKey
 
 makeToKeyU :: FieldN -> Property
 makeToKeyU i = i /= 0 ==> 
-    (fromPrivateKey $ makeKey (fromIntegral i)) == (fromIntegral i)
-    where makeKey = fromJust . makePrivateKeyU
+    (fromPrvKey $ makeKey (fromIntegral i)) == (fromIntegral i)
+    where makeKey = fromJust . makePrvKeyU
 
 {- Key formats -}
 
-fromToWIF :: PrivateKey -> Property
+fromToWIF :: PrvKey -> Property
 fromToWIF pk = i > 0 ==> pk == (fromJust $ fromWIF $ toWIF pk)
-    where i = runPrivateKey pk
+    where i = runPrvKey pk
+
+getPutPrv :: PrvKey -> Property
+getPutPrv k@(PrvKey  i) = i > 0 ==> 
+    k == runGet getPrvKey  (runPut $ putPrvKey k)
+getPutPrv k@(PrvKeyU i) = i > 0 ==> 
+    k == runGet getPrvKeyU (runPut $ putPrvKey k)
 
 {- Key Compression -}
 
 testCompressed :: FieldN -> Property
 testCompressed n = n > 0 ==> 
-    isCompressed $ derivePublicKey $ makeKey (fromIntegral n)
-    where makeKey = fromJust . makePrivateKey
+    not $ isPubKeyU $ derivePubKey $ fromJust $ makePrvKey $ fromIntegral n
 
 testUnCompressed :: FieldN -> Property
 testUnCompressed n = n > 0 ==> 
-    not $ isCompressed $ derivePublicKey $ makeKey (fromIntegral n)
-    where makeKey = fromJust . makePrivateKeyU
+    isPubKeyU $ derivePubKey $ fromJust $ makePrvKeyU $ fromIntegral n
 
 testPrivateCompressed :: FieldN -> Property
 testPrivateCompressed n = n > 0 ==> 
-    isPrivateKeyCompressed $ makeKey (fromIntegral n)
-    where makeKey = fromJust . makePrivateKey
+    not $ isPrvKeyU $ fromJust $ makePrvKey $ fromIntegral n
 
 testPrivateUnCompressed :: FieldN -> Property
 testPrivateUnCompressed n = n > 0 ==> 
-    not $ isPrivateKeyCompressed $ makeKey (fromIntegral n)
-    where makeKey = fromJust . makePrivateKeyU
+    isPrvKeyU $ fromJust $ makePrvKeyU $ fromIntegral n
 
-testDerivedPublicKey :: PrivateKey -> Bool
-testDerivedPublicKey k = validatePublicKey $ derivePublicKey k
+testDerivedPubKey :: PrvKey -> Bool
+testDerivedPubKey k = isValidPubKey $ derivePubKey k
+
+{- Key properties -}
+
+testAddPubKeyC :: TestPrvKeyC -> TestPrvKeyC -> Bool
+testAddPubKeyC (TestPrvKeyC k1) (TestPrvKeyC k2)
+    | model == InfPoint = isNothing res
+    | otherwise         = PubKey model == fromJust res
+    where p1    = derivePubKey k1
+          p2    = derivePubKey k2
+          model = addPoint (runPubKey p1) (runPubKey p2)
+          res   = addPubKeys p1 p2
+
+testAddPubKeyU :: TestPrvKeyU -> TestPrvKeyU -> Bool
+testAddPubKeyU (TestPrvKeyU k1) (TestPrvKeyU k2)
+    | model == InfPoint = isNothing res
+    | otherwise         = PubKeyU model == fromJust res
+    where p1    = derivePubKey k1
+          p2    = derivePubKey k2
+          model = addPoint (runPubKey p1) (runPubKey p2)
+          res   = addPubKeys p1 p2
+
+testAddPrvKeyC :: TestPrvKeyC -> TestPrvKeyC -> Bool
+testAddPrvKeyC (TestPrvKeyC k1) (TestPrvKeyC k2)
+    | model == 0 = isNothing res
+    | otherwise  = PrvKey model == fromJust res
+    where model = (runPrvKey k1) + (runPrvKey k2)
+          res   = addPrvKeys k1 k2
+
+testAddPrvKeyU :: TestPrvKeyU -> TestPrvKeyU -> Bool
+testAddPrvKeyU (TestPrvKeyU k1) (TestPrvKeyU k2)
+    | model == 0 = isNothing res
+    | otherwise  = PrvKeyU model == fromJust res
+    where model = (runPrvKey k1) + (runPrvKey k2)
+          res   = addPrvKeys k1 k2
+
 

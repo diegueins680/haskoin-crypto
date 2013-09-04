@@ -51,23 +51,23 @@ which provides the following advantages:
 
         -- Create a private key from a random source
         -- Will fail if random256 is not > 0 and < curve order N
-        priv <- (fromJust . makePrivateKey) <$> random256
+        prv <- (fromJust . makePrvKey) <$> random256
 
             -- Derive the public key from a private key
-        let pub   = derivePublicKey priv
+        let pub   = derivePubKey prv
             -- Compute the bitcoin address from the public key
-            addr  = publicKeyAddress pub
+            addr  = pubKeyAddr pub
             -- Serialize the private key to WIF format
-            wif   = toWIF priv
+            wif   = toWIF prv
             -- Deserialize a private key from WIF format
-            priv' = fromWIF wif
+            prv' = fromWIF wif
 
             -- Serialize and de-serialize a public key
             -- See Data.Binary for more details
         let pubBin = encode pub
             pub'   = case decodeOrFail pubBin of
                 (Left  (_, _, err)) -> error err
-                (Right (_, _, res)) -> res :: PublicKey
+                (Right (_, _, res)) -> res :: PubKey
 
         -- Generate a random seed to create signature nonces
         seed <- random256
@@ -79,12 +79,12 @@ which provides the following advantages:
                 hash = doubleHash256 msg
 
             -- Signatures are guaranteed to use different nonces
-            sig1 <- signMessage hash priv
-            sig2 <- signMessage hash priv
+            sig1 <- signMessage hash prv
+            sig2 <- signMessage hash prv
 
             -- Verify signatures
-            let ver1 = verifyMessage hash sig1 pub
-                ver2 = verifyMessage hash sig2 pub
+            let ver1 = verifySignature hash sig1 pub
+                ver2 = verifySignature hash sig2 pub
 
                 -- Serialize and de-serialize a signature
                 -- See Data.Binary for more details
@@ -96,7 +96,7 @@ which provides the following advantages:
 
             return ()
 
-        print $ (show priv)
+        print $ (show prv)
         print $ (show seed)
 ```
 
@@ -111,11 +111,9 @@ All the types and functions in this section are exported by `Haskoin.Crypto`
 ### Keys
 
 ```haskell
-    data PublicKey  = PublicKey  Point | 
-                      PublicKeyU Point
+    data PubKey = PubKey Point | PubKeyU Point
 
-    data PrivateKey = PrivateKey  FieldN | 
-                      PrivateKeyU FieldN
+    data PrvKey = PrvKey FieldN | PrvKeyU FieldN
 ```
 
 Public and private keys each have an associated data type. They each have two
@@ -125,8 +123,8 @@ compressed format, so uncompressed versions are usually explicitly postfixed
 with an upper-case U. The data constructors are mainly used internally for
 serialization and are not exported by the library.
 
-The `PublicKey` type is an instance of `Data.Binary` so it can be serialized
-and de-serialized through the `encode` and `decodeOrFail functions. Below is a
+The `PubKey` type is an instance of `Data.Binary` so it can be serialized
+and de-serialized through the `encode` and `decodeOrFail` functions. Below is a
 sample code describing how to use the serialization interface.
 
 ```haskell
@@ -136,13 +134,13 @@ sample code describing how to use the serialization interface.
 
     -- toByteString and fromByteString are only example functions
     -- They are not exported by Haskoin.Crypto
-    toByteString :: PublicKey -> ByteString
+    toByteString :: PubKey -> ByteString
     toByteString key = encode key
     
-    fromByteString :: ByteString -> PublicKey
+    fromByteString :: ByteString -> PubKey
     fromByteString bs = case decodeOrFail bs of
         (Left  (_, _, err)) -> error err
-        (Right (_, _, res)) -> res :: PublicKey
+        (Right (_, _, res)) -> res 
 ```
 
 An uncompressed public key will store both **x** and **y** components of a
@@ -156,65 +154,75 @@ parity of **y**.
 To create a private key from an Integer, you can use either:
 
 ```haskell
-    makePrivateKey  :: Integer -> Maybe PrivateKey -- Compressed format
-    makePrivateKeyU :: Integer -> Maybe PrivateKey -- Uncompressed format
+    makePrvKey  :: Integer -> Maybe PrvKey -- Compressed format
+    makePrvKeyU :: Integer -> Maybe PrvKey -- Uncompressed format
 ```
 
 These functions can return `Nothing` if the Integer is <= 0 or >= than the
 curve order N.
 
 Note that the Integer is your secret for the private key and it needs to be
-drawn from a random source containing at least 256 bits of entropy. We can not
-be held accountable if you are using a bad random number generator. 
+drawn from a random source containing at least 128 bits of entropy.
 
-To recover the secret (as `Integer`) in a `PrivateKey`:
-
-```haskell
-    fromPrivateKey :: PrivateKey -> Integer
-```
-
-To test if an Integer would make a valid `PrivateKey` (i > 0 && i < N):
+To recover the secret (as `Integer`) in a `PrvKey`:
 
 ```haskell
-    isIntegerValidKey :: Integer -> Bool
+    fromPrvKey :: PrvKey -> Integer
 ```
 
-You can derive a `PublicKey` from a `PrivateKey`:
+To test if an Integer would make a valid `PrvKey` (i > 0 && i < N):
 
 ```haskell
-    derivePublicKey :: PrivateKey -> PublicKey
+    isValidPrvKey :: Integer -> Bool
 ```
 
-If you need to test whether you are dealing with a compressed or uncompressed
-key:
+You can derive a `PubKey` from a `PrvKey`:
 
 ```haskell
-    isCompressed :: PublicKey -> Bool
-    isPrivateKeyCompressed :: PrivateKey -> Bool
+    derivePubKey :: PrvKey -> PubKey
 ```
 
-You can also test if a `PublicKey` is valid. This will check that the elliptic
+If you need to test whether you are dealing with the uncompressed alternatives
+of the keys:
+
+```haskell
+    isPubKeyU :: PubKey -> Bool
+    isPrvKeyU :: PrvKey -> Bool
+```
+
+You can also test if a `PubKey` is valid. This will check that the elliptic
 curve point associated with the public key is not the point at infinity and
 that the **x** and **y** coordinates of the point lie on the SECP256k1 curve.
 
 ```haskell
-    validatePublicKey :: PublicKey -> Bool
+    isPubKeyValid :: PubKey -> Bool
 ``` 
 
 To derive a base58 Bitcoin address from a public key (like
 176CwMCWMq1y9CxFZWk7Vfoka5PoaNzxRq):
 
 ```haskell
-    publicKeyAddress :: PublicKey -> Data.ByteString
+    pubKeyAddr :: PubKey -> Data.ByteString
 ```
 
-You can also import and export private keys to the WIF (Wallet Import Format)
-format which is compatible with the reference Satoshi client:
+You can serialize/de-serialize a `PrvKey` in the `Get` and `Put` monad as a
+fixed-sized 32 byte Integer in big endian format (same as for `Hash256`):
+
+```haskell
+    -- Check Data.Binary for more details  
+    putPrvKey  :: PrvKey -> Put
+    getPrvKey  :: Get PrvKey
+    -- De-serialize as an uncompressed private key
+    getPrvKeyU :: Get PrvKey
+```
+
+You can also import and export private keys to/from the WIF (Wallet Import
+Format) format which is compatible with the reference Satoshi client:
 
 ```haskell
     -- fromWIF returns Nothing if the ByteString format is bad
-    fromWIF :: Data.ByteString -> Maybe PrivateKey
-    toWIF :: PrivateKey -> Data.ByteString
+    fromWIF :: Data.ByteString -> Maybe PrvKey
+    toWIF :: PrvKey -> Data.ByteString
 ```
 
 For more details on the WIF format, check out:
@@ -243,7 +251,7 @@ accidentally be re-used.
 Runs an `ECDSA` monad by seeding it with the initial **k** nonce used for
 signature creations. This library doesn't provide the random number generator
 (RNG) for seeding this initial value. You need to make sure you provide an
-Integer drawn from a random pool of at least 256 bits of entropy. 
+Integer drawn from a random pool of at least 128 bits of entropy. 
 
 ```haskell
     data Signature = Signature FieldN FieldN
@@ -252,7 +260,7 @@ Integer drawn from a random pool of at least 256 bits of entropy.
 Data type describing an `ECDSA` signature.
 
 ```haskell
-    signMessage :: Monad m => Hash256 -> PrivateKey -> ECDSA m Signature
+    signMessage :: Monad m => Hash256 -> PrvKey -> ECDSA m Signature
 ```
 
 `signMessage` should be called withing the `ECDSA` monad to safely sign the
@@ -275,7 +283,13 @@ is an example describing how to use the serialization interface.
     fromByteString :: ByteString -> Signature
     fromByteString bs = case decodeOrFail bs of
         (Left  (_, _, err)) -> error err
-        (Right (_, _, res)) -> res :: Signature
+        (Right (_, _, res)) -> res 
+```
+
+To verify a `Signature`:
+
+```haskell
+    verifySignature :: Hash256 -> Signature -> PubKey -> Bool
 ```
 
 ### Digests

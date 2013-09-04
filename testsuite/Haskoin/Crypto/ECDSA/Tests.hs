@@ -37,12 +37,12 @@ tests =
 
 {- ECDSA Signatures -}
 
-signAndVerify :: Hash256 -> PrivateKey -> Integer -> Bool
-signAndVerify msg d k = verifyMessage msg s q
-    where q = derivePublicKey d
+signAndVerify :: Hash256 -> PrvKey -> Integer -> Bool
+signAndVerify msg d k = verifySignature msg s q
+    where q = derivePubKey d
           s = runIdentity $ withECDSA k (signMessage msg d)
            
-uniqueSignatures :: Hash256 -> PrivateKey -> Integer -> Bool
+uniqueSignatures :: Hash256 -> PrvKey -> Integer -> Bool
 uniqueSignatures msg d k = r /= r' && s /= s'
     where ((r,s),(r',s')) = runIdentity $ withECDSA k $ do
             (Signature a b) <- signMessage msg d
