@@ -11,7 +11,7 @@ libraries implementing the various parts of the bitcoin protocol. Specifically,
 haskoin-crypto provides the elliptic curve cryptography required for creating
 and validating bitcoin transactions. Only operations on the bitcoin-specific
 SECP256k1 curve are available in this package. haskoin-crypto also implements
-the SHA-256 and RIPEMP-160 digest algorithms.
+the SHA-256 and RIPEMD-160 digest algorithms.
 
 The philosophy behind haskoin-crypto is to provide a sound implementation of
 the elliptic curve cryptography by favouring elegance and safety over
