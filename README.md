@@ -56,7 +56,7 @@ which provides the following advantages:
             -- Derive the public key from a private key
         let pub   = derivePubKey prv
             -- Compute the bitcoin address from the public key
-            addr  = pubKeyAddr pub
+            addr  = addrToBase58 $ pubKeyAddr pub
             -- Serialize the private key to WIF format
             wif   = toWIF prv
             -- Deserialize a private key from WIF format
@@ -343,6 +343,43 @@ To compute a `CheckSum32`, use:
 ```haskell
     chksum32 :: BS.ByteString -> CheckSum32
 ```
+
+### Bitcoin Addresses and Base58
+
+We have a data type called `Address` to represent addresses to which people can
+send bitcoins to. Today, we have regular public key addresses or script hash
+addresses. The former is computed from the hash of a public key while the later
+is computed from the hash of a script.
+
+```haskell
+    data Address = PubKeyAddress Hash160 | ScriptAddress Hash160
+```
+
+You can compute the Base58 representation of an address using the following
+functions:
+
+```haskell
+    addrToBase58   :: Address -> BS.ByteString
+    addrFromBase58 :: BS.ByteString -> Maybe Address
+```
+
+This will yield addresses with the following formats:
+
+- PubKeyAddress: 176CwMCWMq1y9CxFZWk7Vfoka5PoaNzxRq (leading 0x00 on prodnet)
+- ScriptAddress: 3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC (leading 0x05 on prodnet)
+
+If you need access to the raw base58 encoding functions, use:
+
+```haskell
+    encodeBase58      :: BS.ByteString -> BS.ByteString
+    decodeBase58      :: BS.ByteString -> Maybe BS.ByteString
+    encodeBase58Check :: BS.ByteString -> BS.ByteString
+    decodeBase58Check :: BS.ByteString -> Maybe BS.ByteString
+```
+
+The decoding functions may return `Nothing` if the input contains invalid
+Base58 data or if the checksum doesn't match in the case of
+`decodeBase58Check`.
 
 ## Dependencies
 

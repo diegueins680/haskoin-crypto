@@ -27,7 +27,7 @@ main = do
         -- Derive the public key from a private key
     let pub   = derivePubKey prv
         -- Compute the bitcoin address from the public key
-        addr  = pubKeyAddr pub
+        addr  = addrToBase58 $ pubKeyAddr pub
         -- Serialize the private key to WIF format
         wif   = toWIF prv
         -- Deserialize a private key from WIF format

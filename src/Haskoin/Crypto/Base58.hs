@@ -99,26 +99,15 @@ data Address = PubKeyAddress { runAddress :: Hash160 } |
                deriving (Eq, Show)
 
 addrToBase58 :: Address -> BS.ByteString
-addrToBase58 = encodeBase58Check . encode'
+addrToBase58 addr = encodeBase58Check $ case addr of
+    (PubKeyAddress i) -> BS.cons 0 (encode' $ runAddress addr)
+    (ScriptAddress i) -> BS.cons 5 (encode' $ runAddress addr)
 
 addrFromBase58 :: BS.ByteString -> Maybe Address
 addrFromBase58 bs = do
     val <- decodeBase58Check bs
-    case decodeOrFail' val of
-        (Left _)            -> Nothing
-        (Right (_, _, res)) -> Just res
-
-instance Binary Address where
-    
-    get = do
-        bs <- getByteString 21 -- (1 version) + (20 hash)
-        case (BS.head bs) of
-            0x00 -> return $ PubKeyAddress $ decode' $ BS.tail bs
-            0x05 -> return $ ScriptAddress $ decode' $ BS.tail bs
-            _    -> fail $ "Get: Invalid address version byte"
-
-    put addr = 
-        putByteString $ case addr of
-            (PubKeyAddress i) -> BS.cons 0x00 (encode' i)
-            (ScriptAddress i) -> BS.cons 0x05 (encode' i)
+    case (BS.head val) of
+        0 -> return $ PubKeyAddress $ decode' $ BS.tail val
+        5 -> return $ ScriptAddress $ decode' $ BS.tail val
+        _    -> fail $ "Get: Invalid address version byte"
 
