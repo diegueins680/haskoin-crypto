@@ -43,6 +43,9 @@ module Haskoin.Crypto
 , toWIF
 
 -- Base58 module
+, Address(..)
+, addrFromBase58
+, addrToBase58
 , encodeBase58
 , decodeBase58
 , encodeBase58Check

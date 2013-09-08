@@ -15,6 +15,7 @@ import qualified Data.ByteString as BS
 
 import QuickCheckUtils
 
+import Haskoin.Util
 import Haskoin.Crypto.Base58
 
 tests :: [Test]
@@ -22,6 +23,8 @@ tests =
     [ testGroup "Address and Base58"
         [ testProperty "decode58( encode58(i) ) = i" decodeEncode58
         , testProperty "decode58Chk( encode58Chk(i) ) = i" decodeEncode58Check
+        , testProperty "decode( encode(address) ) = address" binAddr
+        , testProperty "decode58( encode58(address) ) = address" binAddr58
         ]
     ]
 
@@ -34,4 +37,10 @@ decodeEncode58Check :: BS.ByteString -> Bool
 decodeEncode58Check bs = case decodeBase58Check (encodeBase58Check bs) of
     (Just r) -> r == bs
     Nothing  -> False
+
+binAddr :: Address -> Bool
+binAddr a = (decode' $ encode' a) == a
+
+binAddr58 :: Address -> Bool
+binAddr58 a = (fromJust $ addrFromBase58 $ addrToBase58 a) == a
 

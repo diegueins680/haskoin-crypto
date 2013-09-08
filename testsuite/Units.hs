@@ -14,6 +14,7 @@ import Haskoin.Crypto.Ring
 import Haskoin.Crypto.Point
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Hash
+import Haskoin.Crypto.Base58
 import Haskoin.Util
 
 -- Unit tests copied from bitcoind implementation
@@ -76,10 +77,10 @@ checkKeyCompressed = do
     assertBool "Key 2C" $ not $ isPubKeyU pub2C
 
 checkMatchingAddress = do
-    assertBool "Key 1"  $ addr1  == pubKeyAddr pub1
-    assertBool "Key 2"  $ addr2  == pubKeyAddr pub2
-    assertBool "Key 1C" $ addr1C == pubKeyAddr pub1C
-    assertBool "Key 2C" $ addr2C == pubKeyAddr pub2C
+    assertBool "Key 1"  $ addr1  == (addrToBase58 $ pubKeyAddr pub1)
+    assertBool "Key 2"  $ addr2  == (addrToBase58 $ pubKeyAddr pub2)
+    assertBool "Key 1C" $ addr1C == (addrToBase58 $ pubKeyAddr pub1C)
+    assertBool "Key 2C" $ addr2C == (addrToBase58 $ pubKeyAddr pub2C)
     
 checkSignatures h = do
     assertBool "Key 1, Sign1"   $ verifySignature h sign1 pub1

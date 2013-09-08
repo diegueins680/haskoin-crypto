@@ -1,28 +1,40 @@
 module Haskoin.Crypto.Base58
-( encodeBase58
+( Address(..)
+, addrToBase58
+, addrFromBase58
+, encodeBase58
 , decodeBase58
 , encodeBase58Check
 , decodeBase58Check
 ) where
 
+import Control.Monad (guard, unless)
+import Control.Applicative ((<$>))
+
 import Data.Char (ord)
 import Data.Word (Word8)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import Data.Bits (shiftL)
-import Data.Binary (Get, Put, encode)
-
-import Control.Applicative ((<$>))
-import Control.Monad (guard)
+import Data.Binary (Binary, get, put)
+import Data.Binary.Get (getByteString)
+import Data.Binary.Put (putByteString)
 
 import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as M
 
 import Haskoin.Crypto.Hash 
-    ( chksum32
+    ( Hash160
+    , chksum32
     , hash160BS
     , hash256BS
     )
-import Haskoin.Util (encode', integerToBS, bsToInteger)
+import Haskoin.Util 
+    ( encode'
+    , decode'
+    , decodeOrFail'
+    , integerToBS
+    , bsToInteger
+    )
 
 b58String :: String
 b58String = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -81,4 +93,32 @@ decodeBase58Check bs = do
     let (res,chk) = BS.splitAt ((BS.length rs) - 4) rs
     guard $ chk == (encode' $ chksum32 res)
     return res
+
+data Address = PubKeyAddress { runAddress :: Hash160 } |
+               ScriptAddress { runAddress :: Hash160 }
+               deriving (Eq, Show)
+
+addrToBase58 :: Address -> BS.ByteString
+addrToBase58 = encodeBase58Check . encode'
+
+addrFromBase58 :: BS.ByteString -> Maybe Address
+addrFromBase58 bs = do
+    val <- decodeBase58Check bs
+    case decodeOrFail' val of
+        (Left _)            -> Nothing
+        (Right (_, _, res)) -> Just res
+
+instance Binary Address where
+    
+    get = do
+        bs <- getByteString 21 -- (1 version) + (20 hash)
+        case (BS.head bs) of
+            0x00 -> return $ PubKeyAddress $ decode' $ BS.tail bs
+            0x05 -> return $ ScriptAddress $ decode' $ BS.tail bs
+            _    -> fail $ "Get: Invalid address version byte"
+
+    put addr = 
+        putByteString $ case addr of
+            (PubKeyAddress i) -> BS.cons 0x00 (encode' i)
+            (ScriptAddress i) -> BS.cons 0x05 (encode' i)
 

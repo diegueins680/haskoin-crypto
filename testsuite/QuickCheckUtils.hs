@@ -12,6 +12,7 @@ import Haskoin.Crypto.Point
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
+import Haskoin.Crypto.Base58
 
 data Mod32
 type Test32  = Ring Mod32
@@ -53,6 +54,13 @@ instance Arbitrary PrvKey where
 
 instance Arbitrary PubKey where
     arbitrary = derivePubKey <$> (arbitrary :: Gen PrvKey)
+
+instance Arbitrary Address where
+    arbitrary = do
+        i <- choose (1,2^160-1) :: Gen Integer
+        elements [ PubKeyAddress $ fromInteger i
+                 , ScriptAddress $ fromInteger i
+                 ]
 
 instance Arbitrary Signature where
     arbitrary = do

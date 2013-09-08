@@ -51,12 +51,13 @@ import Haskoin.Crypto.Point
     , validatePoint
     )
 import Haskoin.Crypto.Base58 
-    ( encodeBase58Check
+    ( Address(..)
+    , encodeBase58Check
     , decodeBase58Check
     )
 import Haskoin.Crypto.Hash 
     ( Hash256
-    , hash160BS
+    , hash160
     , hash256BS
     )
 import Haskoin.Util 
@@ -151,10 +152,8 @@ getCompressed e = do
     return $ PubKey $ fromJust $ p
     where matchSign a = (even a) == e
 
-pubKeyAddr :: PubKey -> BS.ByteString
-pubKeyAddr p = 
-    encodeBase58Check . (BS.cons 0x00) . hash160BS . hash256BS $ bs
-    where bs = encode' p 
+pubKeyAddr :: PubKey -> Address
+pubKeyAddr = PubKeyAddress . hash160 . hash256BS . encode'
 
 {- Private Keys -}
 
