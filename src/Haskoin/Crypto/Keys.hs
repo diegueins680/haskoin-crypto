@@ -37,9 +37,11 @@ import qualified Data.ByteString as BS
     )
 import Haskoin.Crypto.Ring 
     ( FieldN, FieldP
+    , curveN
     , isIntegerValidKey
     , quadraticResidue
     , toMod256
+    , toFieldN
     )
 import Haskoin.Crypto.Point 
     ( Point( InfPoint )
@@ -49,6 +51,7 @@ import Haskoin.Crypto.Point
     , getAffine
     , curveB
     , validatePoint
+    , isInfPoint
     )
 import Haskoin.Crypto.Base58 
     ( Address(..)
@@ -90,14 +93,15 @@ isValidPubKey :: PubKey -> Bool
 isValidPubKey = validatePoint . runPubKey
 
 -- Adding public keys together. Provides support for HDW (BIP32)
-addPubKeys :: PubKey -> PubKey -> Maybe PubKey
-addPubKeys (PubKey p1) (PubKey p2) = case addPoint p1 p2 of
-    InfPoint -> Nothing
-    p3       -> Just $ PubKey p3
-addPubKeys (PubKeyU p1) (PubKeyU p2) = case addPoint p1 p2 of
-    InfPoint -> Nothing
-    p3       -> Just $ PubKeyU p3
-addPubKeys _ _ = error "Adding incompatible public keys"
+addPubKeys :: PubKey -> Hash256 -> Maybe PubKey
+addPubKeys pub i
+    | isPubKeyU pub = error "Add: HDW only supports compressed formats"
+    | toInteger i < curveN =
+        let pt1 = mulPoint (toFieldN i) curveG
+            pt2 = addPoint (runPubKey pub) pt1
+            in if isInfPoint pt2 then Nothing
+                                 else Just $ PubKey pt2
+    | otherwise = Nothing
 
 isPubKeyU :: PubKey -> Bool
 isPubKeyU (PubKey  _) = False
@@ -181,10 +185,13 @@ fromPrvKey :: PrvKey -> Integer
 fromPrvKey = fromIntegral . runPrvKey
 
 -- Adding private keys together. Provides support for HDW (BIP32)
-addPrvKeys :: PrvKey -> PrvKey -> Maybe PrvKey
-addPrvKeys (PrvKey  r1) (PrvKey  r2) = makePrvKey  $ toInteger $ r1 + r2
-addPrvKeys (PrvKeyU r1) (PrvKeyU r2) = makePrvKeyU $ toInteger $ r1 + r2
-addPrvKeys _ _ = error "Adding incompatible private keys"
+addPrvKeys :: PrvKey -> Hash256 -> Maybe PrvKey
+addPrvKeys key i
+    | isPrvKeyU key = error "Add: HDW only supports compressed formats"
+    | toInteger i < curveN =
+        let r = (runPrvKey key) + (toFieldN i) 
+            in makePrvKey $ toInteger r
+    | otherwise = Nothing
 
 isPrvKeyU :: PrvKey -> Bool
 isPrvKeyU (PrvKey  _) = False

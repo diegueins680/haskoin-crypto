@@ -41,10 +41,8 @@ tests =
         [ testProperty "Derived public key valid" testDerivedPubKey
         ],
       testGroup "Key properties"
-        [ testProperty "PubKey addition" testAddPubKeyC
-        , testProperty "PubKeyU addition" testAddPubKeyU
-        , testProperty "PrvKey addition" testAddPrvKeyC
-        , testProperty "PrvKeyU addition" testAddPrvKeyU
+        [ testProperty "PubKey addition" testAddPubKey
+        , testProperty "PrvKey addition" testAddPrvKey
         ]
     ]
 
@@ -106,36 +104,21 @@ testDerivedPubKey k = isValidPubKey $ derivePubKey k
 
 {- Key properties -}
 
-testAddPubKeyC :: TestPrvKeyC -> TestPrvKeyC -> Bool
-testAddPubKeyC (TestPrvKeyC k1) (TestPrvKeyC k2)
-    | model == InfPoint = isNothing res
-    | otherwise         = PubKey model == fromJust res
-    where p1    = derivePubKey k1
-          p2    = derivePubKey k2
-          model = addPoint (runPubKey p1) (runPubKey p2)
-          res   = addPubKeys p1 p2
+testAddPubKey :: TestPrvKeyC -> Hash256 -> Bool
+testAddPubKey (TestPrvKeyC key) i 
+    | toInteger i >= curveN = isNothing res
+    | model == InfPoint     = isNothing res
+    | otherwise             = PubKey model == fromJust res
+    where pub   = derivePubKey key
+          pt    = mulPoint (toFieldN i) curveG
+          model = addPoint (runPubKey pub) pt
+          res   = addPubKeys pub i
 
-testAddPubKeyU :: TestPrvKeyU -> TestPrvKeyU -> Bool
-testAddPubKeyU (TestPrvKeyU k1) (TestPrvKeyU k2)
-    | model == InfPoint = isNothing res
-    | otherwise         = PubKeyU model == fromJust res
-    where p1    = derivePubKey k1
-          p2    = derivePubKey k2
-          model = addPoint (runPubKey p1) (runPubKey p2)
-          res   = addPubKeys p1 p2
-
-testAddPrvKeyC :: TestPrvKeyC -> TestPrvKeyC -> Bool
-testAddPrvKeyC (TestPrvKeyC k1) (TestPrvKeyC k2)
-    | model == 0 = isNothing res
-    | otherwise  = PrvKey model == fromJust res
-    where model = (runPrvKey k1) + (runPrvKey k2)
-          res   = addPrvKeys k1 k2
-
-testAddPrvKeyU :: TestPrvKeyU -> TestPrvKeyU -> Bool
-testAddPrvKeyU (TestPrvKeyU k1) (TestPrvKeyU k2)
-    | model == 0 = isNothing res
-    | otherwise  = PrvKeyU model == fromJust res
-    where model = (runPrvKey k1) + (runPrvKey k2)
-          res   = addPrvKeys k1 k2
-
+testAddPrvKey :: TestPrvKeyC -> Hash256 -> Bool
+testAddPrvKey (TestPrvKeyC key) i
+    | toInteger i >= curveN = isNothing res
+    | model == 0  = isNothing res
+    | otherwise   = PrvKey model == fromJust res
+    where model = (runPrvKey key) + (toFieldN i)
+          res   = addPrvKeys key i
 
