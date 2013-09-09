@@ -362,7 +362,7 @@ To compute an `Address` from a `PubKey`:
 
 ```haskell
     pubKeyAddr :: PubKey -> Address
-```haskell
+```
 
 You can compute the Base58 representation of an address using the following
 functions:
