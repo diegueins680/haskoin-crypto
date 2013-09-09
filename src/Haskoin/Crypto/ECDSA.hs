@@ -94,7 +94,7 @@ nextSecret = do
 genPrvKey :: Monad m => SecretT m PrvKey
 genPrvKey = liftM (fromJust . makePrvKey . toInteger) nextSecret
         
--- Build a private/public key pair from the ECDSA monad random nonce
+-- Build a private/public key pair from the SecretT monad
 -- Section 3.2.1 http://www.secg.org/download/aid-780/sec1-v2.pdf
 genKeyPair :: Monad m => SecretT m (FieldN, Point)
 genKeyPair = do
@@ -105,8 +105,8 @@ genKeyPair = do
     -- 3.2.1.3
     return (d,q)
 
--- Safely sign a message inside the ECDSA monad.
--- ECDSA monad will generate a new nonce for each signature
+-- Safely sign a message inside the SecretT monad
+-- SecretT monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
 signMessage :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 signMessage _ (PrvKey  0) = error "Integer 0 is an invalid private key"
@@ -121,7 +121,7 @@ signMessage h d = do
 
 -- Signs a message by providing the nonce
 -- Re-using the same nonce twice will expose the private keys
--- Use signMessage within the ECDSA monad instead
+-- Use signMessage within the SecretT monad instead
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
 unsafeSignMessage :: Hash256 -> FieldN -> (FieldN, Point) -> Maybe Signature
 unsafeSignMessage _ 0 _ = Nothing

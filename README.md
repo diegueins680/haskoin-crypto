@@ -27,13 +27,6 @@ which provides the following advantages:
 ## Synopsis
 
 ```haskell
-```
-
-## Usage
-
-All the types and functions in this section are exported by `Haskoin.Crypto`
-
-```haskell
     import Haskoin.Crypto
     import Haskoin.Util (bsToInteger)
 
@@ -112,7 +105,14 @@ All the types and functions in this section are exported by `Haskoin.Crypto`
 
         print $ (show prv)
         print $ (show seed)
-        import Haskoin.Crypto
+```
+
+## Usage
+
+All the types and functions in this section are exported by `Haskoin.Crypto`
+
+```haskell
+    import Haskoin.Crypto
 ```
 
 ### Keys
