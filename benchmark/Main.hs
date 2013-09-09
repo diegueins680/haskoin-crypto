@@ -1,16 +1,20 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
-import Data.Maybe
-import Data.Time.Clock
-import System.Random
 import Control.Monad
 import Control.Applicative
+
+import System.Random
+
+import Data.Maybe
+import Data.Time.Clock
+import qualified Data.ByteString as BS
 
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Point
 import Haskoin.Crypto.Ring
+
 
 bench :: Int -> String -> IO a -> IO a
 bench n s f = do
@@ -56,7 +60,7 @@ main = do
             return $! shamirsTrick a b a b
 
     !sigs <- bench elems "Signature creations" $ 
-        withECDSA 1 $! forM priv (signMessage msg) 
+        withSecret (BS.singleton 1) $! forM priv (signMessage msg) 
         
     bench elems "Signature verifications" $ 
         forM (sigs `zip` pub) $ \(s,q) -> 

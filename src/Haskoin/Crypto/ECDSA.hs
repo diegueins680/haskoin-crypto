@@ -1,35 +1,50 @@
 module Haskoin.Crypto.ECDSA
-( ECDSA
+( SecretT
 , Signature(..)
+, withSecret
 , signMessage
 , verifySignature
-, withECDSA
+, genPrvKey
 ) where
 
-import Data.Maybe (fromJust)
-
-import qualified Data.Binary as B (Binary, get, put)
-import Data.Binary.Put (putWord8, putByteString, runPut)
-import Data.Binary.Get (getWord8)
-
-import Control.Applicative (Applicative, (<*>), (<$>), pure)
 import Control.Monad (liftM, guard, unless)
 import Control.Monad.Trans (MonadTrans, lift)
-import Control.Monad.State 
+import Control.Applicative (Applicative, (<*>), (<$>), pure)
+import qualified Control.Monad.State as S
     ( StateT
     , evalStateT
     , get, put
     )
 
-import qualified Data.ByteString as BS (length)
+import Data.Maybe (fromJust)
+import Data.Binary (Binary, get, put)
+import Data.Binary.Put (putWord8, putByteString, runPut)
+import Data.Binary.Get (getWord8)
+
+import qualified Data.ByteString as BS 
+    ( ByteString
+    , length
+    , cons
+    , append
+    )
   
-import Haskoin.Crypto.Hash (hash256)
-import Haskoin.Util (toStrictBS, isolate)
-import Haskoin.Util (integerToBS)
+import Haskoin.Util 
+    ( toStrictBS
+    , stringToBS
+    , isolate
+    , integerToBS
+    , encode'
+    )
+import Haskoin.Crypto.Hash 
+    ( hash256
+    , hmac512
+    , split512
+    )
 import Haskoin.Crypto.Keys 
     ( PrvKey(..)
     , PubKey(..)
     , curveG
+    , makePrvKey
     )
 import Haskoin.Crypto.Point 
     ( Point
@@ -42,82 +57,49 @@ import Haskoin.Crypto.Ring
     , toFieldN
     , toMod256
     , inverseN
+    , isIntegerValidKey
+    , curveN
     )
 
 type Nonce = FieldN
 
-newtype ECDSA m a = ECDSA { runECDSA :: StateT Nonce m a }
-
-instance Functor m => Functor (ECDSA m) where
-    fmap f m = ECDSA $ fmap f (runECDSA m)
-
-instance (Applicative m, Monad m) => Applicative (ECDSA m) where
-    pure = return
-
-    k <*> m = ECDSA $ do
-        f <- runECDSA k
-        x <- runECDSA m
-        return $ f x
-
-
-instance Monad m => Monad (ECDSA m) where
-    m >>= f = ECDSA $ do
-        x <- runECDSA m
-        runECDSA $ f x
-
-    return = ECDSA . return
-
-instance MonadTrans ECDSA where
-    lift = ECDSA . lift -- Lift over the StateT monad
-
 data Signature = Signature { sigR :: !FieldN, sigS :: !FieldN }
     deriving (Show, Eq)
 
-instance B.Binary Signature where
-    get = do
-        t <- getWord8
-        -- 0x30 is DER sequence type
-        unless (t == 0x30) (fail $ 
-            "Bad DER identifier byte " ++ (show t) ++ ". Expecting 0x30")
-        l <- getWord8
-        -- Length = (33 + 1 identifier byte + 1 length byte) * 2
-        unless (l <= 70) (fail $
-            "Bad DER length " ++ (show t) ++ ". Expecting length <= 70")
-        isolate (fromIntegral l) $ do
-            Signature <$> B.get <*> B.get
+type SecretState = (FieldN, Hash256, Hash256)
 
-    put (Signature 0 s) = error "0 is an invalid r value in a Signature"
-    put (Signature r 0) = error "0 is an invalid s value in a Signature"
-    put (Signature r s) = do
-        putWord8 0x30
-        let c = toStrictBS $ runPut $ B.put r >> B.put s
-        putWord8 (fromIntegral $ BS.length c)
-        putByteString c
+-- PRNG over hmac-512
+type SecretT m a = S.StateT SecretState m a
 
--- The Integer here must be a strong random / pseudo-random number
-withECDSA :: Monad m => Integer -> ECDSA m a -> m a
-withECDSA i m = evalStateT (runECDSA m) (fromInteger i)
-    
-getNextNonce :: Monad m => ECDSA m Nonce
-getNextNonce = ECDSA $ do
-    -- Hash the nonce when we read it
-    nonce <- hash `liftM` get
-    -- Hash it again when we save it
-    put $ hash nonce
-    -- Make sure the nonce is not 0
-    if nonce > 0 
-        then return nonce 
-        else runECDSA getNextNonce
-    where 
-        hash = toFieldN . hash256 . toBS
-        toBS = integerToBS . toInteger
+-- The input ByteString must have an entropy of at least 128 bits
+withSecret :: Monad m => BS.ByteString -> SecretT m a -> m a
+withSecret bs m = S.evalStateT m (s,k,0)
+    where (s,k) = go (stringToBS "Secret seed")
+          go key | isIntegerValidKey $ toInteger l = (toFieldN l,r)
+                 | otherwise = go (BS.cons 0 key)
+              where (l,r) = split512 $ hmac512 key bs 
 
+-- Prime subkey derivation function (from BIP32) with 256 bit counter
+nextSecret :: Monad m => SecretT m FieldN
+nextSecret = do
+    (s,k,c) <- S.get
+    let msg   = BS.append (encode' $ toMod256 s) (encode' c)
+        (l,r) = split512 $ hmac512 (encode' k) msg
+        res   = s + (toFieldN l)
+    S.put (s,k,c+1)
+    if (toInteger l) < curveN && res > 0
+        then return res
+        else nextSecret
+
+genPrvKey :: Monad m => SecretT m PrvKey
+genPrvKey = liftM (fromJust . makePrvKey . toInteger) nextSecret
+        
 -- Build a private/public key pair from the ECDSA monad random nonce
 -- Section 3.2.1 http://www.secg.org/download/aid-780/sec1-v2.pdf
-genKeyPair :: Monad m => ECDSA m (FieldN, Point)
+genKeyPair :: Monad m => SecretT m (FieldN, Point)
 genKeyPair = do
     -- 3.2.1.1 
-    d <- getNextNonce
+    d <- nextSecret
     -- 3.2.1.2
     let q = mulPoint d curveG
     -- 3.2.1.3
@@ -126,7 +108,7 @@ genKeyPair = do
 -- Safely sign a message inside the ECDSA monad.
 -- ECDSA monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-signMessage :: Monad m => Hash256 -> PrvKey -> ECDSA m Signature
+signMessage :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 signMessage _ (PrvKey  0) = error "Integer 0 is an invalid private key"
 signMessage _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
 signMessage h d = do
@@ -178,4 +160,25 @@ verifySignature h (Signature r s) q =
         u2 = r*s'
         -- 4.1.4.5 (u1*G + u2*q)
         p  = shamirsTrick u1 curveG u2 (runPubKey q)
+
+instance Binary Signature where
+    get = do
+        t <- getWord8
+        -- 0x30 is DER sequence type
+        unless (t == 0x30) (fail $ 
+            "Bad DER identifier byte " ++ (show t) ++ ". Expecting 0x30")
+        l <- getWord8
+        -- Length = (33 + 1 identifier byte + 1 length byte) * 2
+        unless (l <= 70) (fail $
+            "Bad DER length " ++ (show t) ++ ". Expecting length <= 70")
+        isolate (fromIntegral l) $ do
+            Signature <$> get <*> get
+
+    put (Signature 0 s) = error "0 is an invalid r value in a Signature"
+    put (Signature r 0) = error "0 is an invalid s value in a Signature"
+    put (Signature r s) = do
+        putWord8 0x30
+        let c = toStrictBS $ runPut $ put r >> put s
+        putWord8 (fromIntegral $ BS.length c)
+        putByteString c
 

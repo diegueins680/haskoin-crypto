@@ -9,6 +9,7 @@ import qualified Haskoin.Crypto.Point.Tests (tests)
 import qualified Haskoin.Crypto.ECDSA.Tests (tests)
 import qualified Haskoin.Crypto.Base58.Tests (tests)
 import qualified Haskoin.Crypto.Keys.Tests (tests)
+import qualified Haskoin.Crypto.Hash.Tests (tests)
 import qualified Units (tests)
 
 main = defaultMain
@@ -16,6 +17,7 @@ main = defaultMain
     ++ Haskoin.Crypto.Point.Tests.tests 
     ++ Haskoin.Crypto.ECDSA.Tests.tests 
     ++ Haskoin.Crypto.Base58.Tests.tests 
+    ++ Haskoin.Crypto.Hash.Tests.tests 
     ++ Haskoin.Crypto.Keys.Tests.tests 
     ++ Units.tests
     )

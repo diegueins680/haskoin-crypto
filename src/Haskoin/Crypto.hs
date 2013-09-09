@@ -1,11 +1,12 @@
 module Haskoin.Crypto
 
 -- ECDSA module
-( ECDSA
+( SecretT
 , Signature
-, withECDSA
+, withSecret
 , signMessage
 , verifySignature
+, genPrvKey
 
 -- Hash module
 , Hash512
@@ -21,6 +22,9 @@ module Haskoin.Crypto
 , doubleHash256
 , doubleHash256BS
 , chksum32
+, hmac512
+, split512
+, join512
 
 -- Keys module
 , PubKey(..)

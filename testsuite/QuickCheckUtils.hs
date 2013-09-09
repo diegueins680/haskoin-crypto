@@ -64,10 +64,10 @@ instance Arbitrary Address where
 
 instance Arbitrary Signature where
     arbitrary = do
-        i <- arbitrary :: Gen Integer
-        d <- arbitrary :: Gen PrvKey
-        h <- arbitrary :: Gen Hash256
-        return $ runIdentity $ withECDSA i (signMessage h d)
+        bs <- arbitrary :: Gen BS.ByteString
+        d  <- arbitrary :: Gen PrvKey
+        h  <- arbitrary :: Gen Hash256
+        return $ runIdentity $ withSecret bs (signMessage h d)
 
 -- from Data.ByteString project
 instance Arbitrary BS.ByteString where

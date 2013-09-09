@@ -100,11 +100,12 @@ checkSignatures h = do
     assertBool "Key 2C, Sign1C" $ not $ verifySignature h sign1C pub2C
     assertBool "Key 2C, Sign2C" $ verifySignature h sign2C pub2C
     where 
-        (sign1, sign2, sign1C, sign2C) = runIdentity $ withECDSA 1 $ do
-            a <- signMessage h sec1
-            b <- signMessage h sec2
-            c <- signMessage h sec1C
-            d <- signMessage h sec2C
-            return (a,b,c,d)
+        (sign1, sign2, sign1C, sign2C) = 
+            runIdentity $ withSecret (BS.singleton 1) $ do
+                a <- signMessage h sec1
+                b <- signMessage h sec2
+                c <- signMessage h sec1C
+                d <- signMessage h sec2C
+                return (a,b,c,d)
 
 

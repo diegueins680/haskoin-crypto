@@ -12,24 +12,26 @@ import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
 
 -- Generate a random Integer with 256 bits of entropy
-random256 :: IO Integer
-random256 = withBinaryFile "/dev/random" ReadMode $ \h -> do
-    bs <- BS.hGet h 32 -- Read 32 bytes
-    return $ bsToInteger bs
+-- Using /dev/urandom in this example 
+-- You should probably use /dev/random in production
+random256 :: IO BS.ByteString
+random256 = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet 32
 
 main :: IO ()
 main = do
 
-    -- Create a private key from a random source
-    -- Will fail if random256 is not > 0 and < curve order N
-    prv <- (fromJust . makePrvKey) <$> random256
+    -- Build an Integer from a random source
+    rnd <- bsToInteger <$> random256
 
+        -- Build a private key from a random Integer
+        -- Will fail if random256 is not > 0 and < curve order N
+    let prv = fromJust $ makePrvKey rnd
         -- Derive the public key from a private key
-    let pub   = derivePubKey prv
+        pub  = derivePubKey prv
         -- Compute the bitcoin address from the public key
-        addr  = addrToBase58 $ pubKeyAddr pub
+        addr = addrToBase58 $ pubKeyAddr pub
         -- Serialize the private key to WIF format
-        wif   = toWIF prv
+        wif  = toWIF prv
         -- Deserialize a private key from WIF format
         prv' = fromWIF wif
 
@@ -43,13 +45,18 @@ main = do
     -- Generate a random seed to create signature nonces
     seed <- random256
     -- Initialize a safe environment for creating signatures
-    withECDSA seed $ do 
+    withSecret seed $ do 
+
+        -- Generate private keys derived from the internal PRNG
+        prv1 <- genPrvKey
+        prv2 <- genPrvKey
+
             -- Create a message in ByteString format
         let msg = BS.pack [1,3,3,7]
             -- Compute two rounds of SHA-256
             hash = doubleHash256 msg
 
-        -- Signatures are guaranteed to use different nonces
+        -- Signatures are signed with nonces derived from the internal PRNG
         sig1 <- signMessage hash prv
         sig2 <- signMessage hash prv
 

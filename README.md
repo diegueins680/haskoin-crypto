@@ -27,6 +27,13 @@ which provides the following advantages:
 ## Synopsis
 
 ```haskell
+```
+
+## Usage
+
+All the types and functions in this section are exported by `Haskoin.Crypto`
+
+```haskell
     import Haskoin.Crypto
     import Haskoin.Util (bsToInteger)
 
@@ -41,24 +48,26 @@ which provides the following advantages:
     import Control.Applicative ((<$>))
 
     -- Generate a random Integer with 256 bits of entropy
-    random256 :: IO Integer
-    random256 = withBinaryFile "/dev/random" ReadMode $ \h -> do
-        bs <- BS.hGet h 32 -- Read 32 bytes
-        return $ bsToInteger bs
+    -- Using /dev/urandom in this example 
+    -- You should probably use /dev/random in production
+    random256 :: IO BS.ByteString
+    random256 = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet 32
 
     main :: IO ()
     main = do
 
-        -- Create a private key from a random source
-        -- Will fail if random256 is not > 0 and < curve order N
-        prv <- (fromJust . makePrvKey) <$> random256
+        -- Build an Integer from a random source
+        rnd <- bsToInteger <$> random256
 
+            -- Build a private key from a random Integer
+            -- Will fail if random256 is not > 0 and < curve order N
+        let prv = fromJust $ makePrvKey rnd
             -- Derive the public key from a private key
-        let pub   = derivePubKey prv
+            pub  = derivePubKey prv
             -- Compute the bitcoin address from the public key
-            addr  = addrToBase58 $ pubKeyAddr pub
+            addr = addrToBase58 $ pubKeyAddr pub
             -- Serialize the private key to WIF format
-            wif   = toWIF prv
+            wif  = toWIF prv
             -- Deserialize a private key from WIF format
             prv' = fromWIF wif
 
@@ -72,13 +81,18 @@ which provides the following advantages:
         -- Generate a random seed to create signature nonces
         seed <- random256
         -- Initialize a safe environment for creating signatures
-        withECDSA seed $ do 
+        withSecret seed $ do 
+
+            -- Generate private keys derived from the internal PRNG
+            prv1 <- genPrvKey
+            prv2 <- genPrvKey
+
                 -- Create a message in ByteString format
             let msg = BS.pack [1,3,3,7]
                 -- Compute two rounds of SHA-256
                 hash = doubleHash256 msg
 
-            -- Signatures are guaranteed to use different nonces
+            -- Signatures are signed with nonces derived from the internal PRNG
             sig1 <- signMessage hash prv
             sig2 <- signMessage hash prv
 
@@ -98,14 +112,7 @@ which provides the following advantages:
 
         print $ (show prv)
         print $ (show seed)
-```
-
-## Usage
-
-All the types and functions in this section are exported by `Haskoin.Crypto`
-
-```haskell
-    import Haskoin.Crypto
+        import Haskoin.Crypto
 ```
 
 ### Keys
@@ -198,13 +205,6 @@ that the **x** and **y** coordinates of the point lie on the SECP256k1 curve.
     isPubKeyValid :: PubKey -> Bool
 ``` 
 
-To derive a base58 Bitcoin address from a public key (like
-176CwMCWMq1y9CxFZWk7Vfoka5PoaNzxRq):
-
-```haskell
-    pubKeyAddr :: PubKey -> Data.ByteString
-```
-
 You can serialize/de-serialize a `PrvKey` in the `Get` and `Put` monad as a
 fixed-sized 32 byte Integer in big endian format (same as for `Hash256`):
 
@@ -232,38 +232,33 @@ For more details on the WIF format, check out:
 ### ECDSA
 
 ```haskell
-    newtype ECDSA m a = ECDSA StateT Nonce m a
+    type SecretT m a = StateT SecretState m a
 ```
 
-The `ECDSA` monad provides a safe context in which to call `signMessage` for
-signature creations. `signMessage` calls within the `ECDSA` monad are
-guaranteed not to re-use the same **k** nonce. The `ECDSA` monad has an
-internal state containing the current **k** value. Whenever you ask for this
-value, it is hashed with SHA-256 and a new value is stored inside the `ECDSA`
-monad by hashing it a second time with SHA-256. This guarantees that the **k**
-value you are going to use for you signature is not stored anywhere and can not
-accidentally be re-used.
+`SecretT` is essentially a monad wrapping a HMAC SHA-512 PRNG. Internally, the
+PRNG works like the BIP32 prime subkey derivation function with a 256 bit
+counter instead of 32. `SecretT` provides a safe context for signing messages
+with `signMessage` as this will not re-use the same **k** nonce. Remember that
+re-using the same **k** nonce for two signatures will expose your private key.
 
 ```haskell
-    withECDSA :: Monad m => Integer -> ECDSA m a -> m a
+    withSecret :: Monad m => Data.ByteString -> SecretT m a -> m a
 ```
 
-Runs an `ECDSA` monad by seeding it with the initial **k** nonce used for
-signature creations. This library doesn't provide the random number generator
-(RNG) for seeding this initial value. You need to make sure you provide an
-Integer drawn from a random pool of at least 128 bits of entropy. 
+Runs a `SecretT` monad by seeding it with an initial random value. You need to
+make sure to use a seed drawn from a pool of at least 128 bits of entropy.
 
 ```haskell
     data Signature = Signature FieldN FieldN
 ```
 
-Data type describing an `ECDSA` signature.
+Data type describing an ECDSA signature.
 
 ```haskell
-    signMessage :: Monad m => Hash256 -> PrvKey -> ECDSA m Signature
+    signMessage :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 ```
 
-`signMessage` should be called withing the `ECDSA` monad to safely sign the
+`signMessage` should be called withing the `SecretT` monad to safely sign the
 hash of a message.
 
 A `Signature` is an instance of `Data.Binary` and can be
@@ -331,6 +326,14 @@ The following message digest functions are exported by the library
     doubleHash256BS :: Data.ByteString -> Data.ByteString
 ```
 
+And the following hash-based message authentication codes (HMAC) functions
+are exported:
+
+```haskell
+    hmac512 :: BS.ByteString -> BS.ByteString -> Hash512
+    hmac256 :: BS.ByteString -> BS.ByteString -> Hash256
+```
+
 A 32 bit checksum is represented as a `CheckSum32` data type
 
 ```haskell
@@ -354,6 +357,12 @@ is computed from the hash of a script.
 ```haskell
     data Address = PubKeyAddress Hash160 | ScriptAddress Hash160
 ```
+
+To compute an `Address` from a `PubKey`:
+
+```haskell
+    pubKeyAddr :: PubKey -> Address
+```haskell
 
 You can compute the Base58 representation of an address using the following
 functions:
