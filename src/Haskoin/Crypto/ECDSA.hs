@@ -16,6 +16,7 @@ import qualified Control.Monad.State as S
     , get, put
     )
 
+import Data.Word (Word32)
 import Data.Maybe (fromJust)
 import Data.Binary (Binary, get, put)
 import Data.Binary.Put (putWord8, putByteString, runPut)
@@ -66,7 +67,7 @@ type Nonce = FieldN
 data Signature = Signature { sigR :: !FieldN, sigS :: !FieldN }
     deriving (Show, Eq)
 
-type SecretState = (FieldN, Hash256, Hash256)
+type SecretState = (FieldN, Hash256, Word32)
 
 -- PRNG over hmac-512
 type SecretT m a = S.StateT SecretState m a
@@ -79,7 +80,7 @@ withSecret bs m = S.evalStateT m (s,k,0)
                  | otherwise = go (BS.cons 0 key)
               where (l,r) = split512 $ hmac512 key bs 
 
--- Prime subkey derivation function (from BIP32) with 256 bit counter
+-- Prime subkey derivation function (from BIP32) with 32 bit counter
 nextSecret :: Monad m => SecretT m FieldN
 nextSecret = do
     (s,k,c) <- S.get
