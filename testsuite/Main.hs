@@ -16,16 +16,14 @@ import qualified Haskoin.Crypto.Hash.Tests (tests)
 import qualified Units (tests)
 import qualified Haskoin.Crypto.Hash.Units (tests)
 
-main = defaultMain Haskoin.Crypto.Hash.Units.tests
-
---main = defaultMain
---    (  Haskoin.Crypto.Ring.Tests.tests 
---    ++ Haskoin.Crypto.Point.Tests.tests 
---    ++ Haskoin.Crypto.ECDSA.Tests.tests 
---    ++ Haskoin.Crypto.Base58.Tests.tests 
---    ++ Haskoin.Crypto.Hash.Tests.tests 
---    ++ Haskoin.Crypto.Keys.Tests.tests 
---    ++ Units.tests
---    ++ Haskoin.Crypto.Hash.Units.tests
---    )
+main = defaultMain
+    (  Haskoin.Crypto.Ring.Tests.tests 
+    ++ Haskoin.Crypto.Point.Tests.tests 
+    ++ Haskoin.Crypto.ECDSA.Tests.tests 
+    ++ Haskoin.Crypto.Base58.Tests.tests 
+    ++ Haskoin.Crypto.Hash.Tests.tests 
+    ++ Haskoin.Crypto.Hash.Units.tests
+    ++ Haskoin.Crypto.Keys.Tests.tests 
+    ++ Units.tests
+    )
 

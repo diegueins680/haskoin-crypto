@@ -147,7 +147,7 @@ hmacDRBGUpd info k0 v0
 
 -- 10.1.2.3 HMAC DRBG Instantiation
 hmacDRBGNew :: EntropyInput -> Nonce -> PersString -> WorkingState
-hmacDRBGNew seed nonce info = (k1, v1, 1)          -- 10.1.2.3.6
+hmacDRBGNew seed nonce info = (k1,v1,1)            -- 10.1.2.3.6
     where s        = BS.concat [seed, nonce, info] -- 10.1.2.3.1
           k0       = BS.replicate 32 0             -- 10.1.2.3.2
           v0       = BS.replicate 32 1             -- 10.1.2.3.3
@@ -157,7 +157,7 @@ hmacDRBGNew seed nonce info = (k1, v1, 1)          -- 10.1.2.3.6
 hmacDRBGRsd :: WorkingState -> EntropyInput -> AdditionalInput -> WorkingState
 hmacDRBGRsd (k,v,_) xseed info = (k0,v0,1)  -- 10.1.2.4.4
     where s        = xseed `BS.append` info -- 10.1.2.4.1
-          (k0, v0) = hmacDRBGUpd s k v      -- 10.1.2.4.2
+          (k0,v0) = hmacDRBGUpd s k v       -- 10.1.2.4.2
 
 -- 10.1.2.5 HMAC DRBG Generation
 hmacDRBGGen :: WorkingState -> Word64 -> AdditionalInput
