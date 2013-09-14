@@ -6,6 +6,7 @@ import Test.QuickCheck
 import Control.Monad.Identity
 import Control.Applicative ((<$>),(<*>))
 
+import Data.Maybe
 import qualified Data.ByteString as BS
 
 import Haskoin.Crypto.Point
@@ -64,10 +65,14 @@ instance Arbitrary Address where
 
 instance Arbitrary Signature where
     arbitrary = do
-        bs <- arbitrary :: Gen BS.ByteString
-        d  <- arbitrary :: Gen PrvKey
-        h  <- arbitrary :: Gen Hash256
-        return $ runIdentity $ withSecret bs (signMessage h d)
+        msg <- arbitrary
+        prv <- runPrvKey <$> (arbitrary :: Gen PrvKey)
+        non <- runPrvKey <$> (arbitrary :: Gen PrvKey)
+        let pub  = mulPoint non curveG
+            sigM = unsafeSignMessage msg prv (non,pub)
+        case sigM of
+            (Just sig) -> return sig
+            Nothing    -> arbitrary 
 
 -- from Data.ByteString project
 instance Arbitrary BS.ByteString where

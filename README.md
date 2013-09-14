@@ -27,21 +27,22 @@ which provides the following advantages:
 ## Synopsis
 
 ```haskell
-    import Haskoin.Crypto
-    import Haskoin.Util (bsToInteger)
+    -- Access to /dev/random
+    import System.IO
+
+    import Control.Applicative ((<$>))
+    import Control.Monad.Trans (liftIO)
+
+    import Data.Maybe (fromJust)
 
     -- For serializing/de-serializing interface
     import Data.Binary (encode, decodeOrFail)
-
-    -- Access to /dev/random
-    import System.IO
     import qualified Data.ByteString as BS
 
-    import Data.Maybe (fromJust)
-    import Control.Applicative ((<$>))
+    import Haskoin.Crypto
+    import Haskoin.Util (bsToInteger)
 
     -- Generate a random Integer with 256 bits of entropy
-    -- Using /dev/urandom in this example 
     -- You should probably use /dev/random in production
     random256 :: IO BS.ByteString
     random256 = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet 32
@@ -71,10 +72,9 @@ which provides the following advantages:
                 (Left  (_, _, err)) -> error err
                 (Right (_, _, res)) -> res :: PubKey
 
-        -- Generate a random seed to create signature nonces
-        seed <- random256
-        -- Initialize a safe environment for creating signatures
-        withSecret seed $ do 
+        -- Initialize a PRNG environment for creating signatures
+        -- You should probably use devRandom in production
+        withSource devURandom $ do 
 
             -- Generate private keys derived from the internal PRNG
             prv1 <- genPrvKey
@@ -89,6 +89,9 @@ which provides the following advantages:
             sig1 <- signMessage hash prv
             sig2 <- signMessage hash prv
 
+            liftIO $ print sig1
+            liftIO $ print sig2
+
             -- Verify signatures
             let ver1 = verifySignature hash sig1 pub
                 ver2 = verifySignature hash sig2 pub
@@ -102,9 +105,6 @@ which provides the following advantages:
                     (Right (_, _, res)) -> res :: Signature
 
             return ()
-
-        print $ (show prv)
-        print $ (show seed)
 ```
 
 ## Usage
@@ -232,21 +232,41 @@ For more details on the WIF format, check out:
 ### ECDSA
 
 ```haskell
-    type SecretT m a = StateT SecretState m a
+    type SecretT m a = S.StateT (SecretState m) m a
 ```
 
-`SecretT` is essentially a monad wrapping a HMAC SHA-512 PRNG. Internally, the
-PRNG works like the BIP32 prime subkey derivation function with a 256 bit
-counter instead of 32. `SecretT` provides a safe context for signing messages
-with `signMessage` as this will not re-use the same **k** nonce. Remember that
-re-using the same **k** nonce for two signatures will expose your private key.
+`SecretT` is essentially a monad wrapping a HMAC DRBG SHA-256. `SecretT`
+provides a safe context for signing messages with `signMessage` as this will
+not re-use the same **k** nonce. Remember that re-using the same **k** nonce
+for two signatures will expose your private key.
 
 ```haskell
-    withSecret :: Monad m => Data.ByteString -> SecretT m a -> m a
+    withSource :: MonadIO m => (Int -> m BS.ByteString) -> SecretT m a -> m a
 ```
 
-Runs a `SecretT` monad by seeding it with an initial random value. You need to
-make sure to use a seed drawn from a pool of at least 128 bits of entropy.
+`withSource` runs a `SecretT` monad. You need to pass it a function that can
+get new bytes of entropy when required. The `SecretT` monad will call this
+function upon initialization and when a reseeding of the HMAC DRBG is required
+(about every 10000 calls). We provide two default sources of entropy:
+`devRandom` and `devURandom` if they are available on your machine. Otherwise
+you can provide your own.
+
+```haskell
+    -- /dev/urandom on machines that support it
+    devURandom :: Int -> IO BS.ByteString
+
+    -- /dev/random on machines that support it
+    devRandom :: Int -> IO BS.ByteString
+```
+
+The `Int` parameter defines how many random bytes you want to get from your
+source. You can use them like this:
+
+```haskell
+    withSource devRandom $ do
+        sig <- signMessage msg key
+        k   <- genPrvKey
+```
 
 ```haskell
     data Signature = Signature FieldN FieldN

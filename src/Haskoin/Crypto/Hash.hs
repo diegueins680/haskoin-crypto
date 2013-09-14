@@ -18,11 +18,12 @@ module Haskoin.Crypto.Hash
 , hmacDRBGUpd
 , hmacDRBGRsd
 , hmacDRBGGen
+, WorkingState
 , split512
 , join512
 ) where
 
-import Data.Word (Word32, Word64)
+import Data.Word (Word16, Word32)
 import Crypto.Hash 
     ( Digest 
     , SHA512
@@ -128,7 +129,7 @@ join512 (a,b) = ((toMod512 a) `shiftL` 256) + (toMod512 b)
    Constants are based on recommentations in Appendix D section 2 (D.2)
 -}
 
-type WorkingState    = (BS.ByteString, BS.ByteString, Word64)
+type WorkingState    = (BS.ByteString, BS.ByteString, Word16)
 type AdditionalInput = BS.ByteString
 type ProvidedData    = BS.ByteString
 type EntropyInput    = BS.ByteString
@@ -173,7 +174,7 @@ hmacDRBGRsd (k,v,_) seed info
           (k0,v0) = hmacDRBGUpd s k v     -- 10.1.2.4.2
 
 -- 10.1.2.5 HMAC DRBG Generation
-hmacDRBGGen :: WorkingState -> Word64 -> AdditionalInput
+hmacDRBGGen :: WorkingState -> Word16 -> AdditionalInput
             -> (WorkingState, Maybe BS.ByteString)
 hmacDRBGGen (k0,v0,c0) bytes info 
     | bytes * 8 > 7500 = error "Maximum bits per request is 7500"

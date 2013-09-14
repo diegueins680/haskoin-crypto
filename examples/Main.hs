@@ -1,18 +1,19 @@
-import Haskoin.Crypto
-import Haskoin.Util (bsToInteger)
+-- Access to /dev/random
+import System.IO
+
+import Control.Applicative ((<$>))
+import Control.Monad.Trans (liftIO)
+
+import Data.Maybe (fromJust)
 
 -- For serializing/de-serializing interface
 import Data.Binary (encode, decodeOrFail)
-
--- Access to /dev/random
-import System.IO
 import qualified Data.ByteString as BS
 
-import Data.Maybe (fromJust)
-import Control.Applicative ((<$>))
+import Haskoin.Crypto
+import Haskoin.Util (bsToInteger)
 
 -- Generate a random Integer with 256 bits of entropy
--- Using /dev/urandom in this example 
 -- You should probably use /dev/random in production
 random256 :: IO BS.ByteString
 random256 = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet 32
@@ -42,10 +43,8 @@ main = do
             (Left  (_, _, err)) -> error err
             (Right (_, _, res)) -> res :: PubKey
 
-    -- Generate a random seed to create signature nonces
-    seed <- random256
-    -- Initialize a safe environment for creating signatures
-    withSecret seed $ do 
+    -- Initialize a PRNG environment for creating signatures
+    withSource devURandom $ do 
 
         -- Generate private keys derived from the internal PRNG
         prv1 <- genPrvKey
@@ -60,6 +59,9 @@ main = do
         sig1 <- signMessage hash prv
         sig2 <- signMessage hash prv
 
+        liftIO $ print sig1
+        liftIO $ print sig2
+
         -- Verify signatures
         let ver1 = verifySignature hash sig1 pub
             ver2 = verifySignature hash sig2 pub
@@ -73,7 +75,4 @@ main = do
                 (Right (_, _, res)) -> res :: Signature
 
         return ()
-
-    print $ (show prv)
-    print $ (show seed)
 

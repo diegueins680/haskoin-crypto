@@ -1,14 +1,19 @@
 module Haskoin.Crypto.ECDSA
 ( SecretT
 , Signature(..)
-, withSecret
+, withSource
+, devURandom
+, devRandom
 , signMessage
+, unsafeSignMessage
 , verifySignature
 , genPrvKey
 ) where
 
+import System.IO
+
 import Control.Monad (liftM, guard, unless)
-import Control.Monad.Trans (MonadTrans, lift)
+import Control.Monad.Trans (MonadTrans, MonadIO, lift)
 import Control.Applicative (Applicative, (<*>), (<$>), pure)
 import qualified Control.Monad.State as S
     ( StateT
@@ -27,6 +32,8 @@ import qualified Data.ByteString as BS
     , length
     , cons
     , append
+    , splitAt
+    , hGet
     )
   
 import Haskoin.Util 
@@ -34,12 +41,17 @@ import Haskoin.Util
     , stringToBS
     , isolate
     , integerToBS
+    , bsToInteger
     , encode'
     )
 import Haskoin.Crypto.Hash 
     ( hash256
     , hmac512
     , split512
+    , WorkingState
+    , hmacDRBGNew
+    , hmacDRBGGen
+    , hmacDRBGRsd
     )
 import Haskoin.Crypto.Keys 
     ( PrvKey(..)
@@ -67,37 +79,51 @@ type Nonce = FieldN
 data Signature = Signature { sigR :: !FieldN, sigS :: !FieldN }
     deriving (Show, Eq)
 
-type SecretState = (FieldN, Hash256, Word32)
+type SecretState m = (WorkingState, (Int -> m BS.ByteString))
 
--- PRNG over hmac-512
-type SecretT m a = S.StateT SecretState m a
+-- HMAC DRBG with SHA-256
+type SecretT m a = S.StateT (SecretState m) m a
 
--- The input ByteString must have an entropy of at least 128 bits
-withSecret :: Monad m => BS.ByteString -> SecretT m a -> m a
-withSecret bs m = S.evalStateT m (s,k,0)
-    where (s,k) = go (stringToBS "Secret seed")
-          go key | isIntegerValidKey $ toInteger l = (toFieldN l,r)
-                 | otherwise = go (BS.cons 0 key)
-              where (l,r) = split512 $ hmac512 key bs 
+-- /dev/urandom on machines that support it
+devURandom :: Int -> IO BS.ByteString
+devURandom i = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet i
+
+-- /dev/random on machines that support it
+devRandom :: Int -> IO BS.ByteString
+devRandom i = withBinaryFile "/dev/random" ReadMode $ flip BS.hGet i
+
+-- You have to supply a function that can generate random bits
+withSource :: MonadIO m => (Int -> m BS.ByteString) -> SecretT m a -> m a
+withSource f m = do
+    seed  <- f 32 -- Read 256 bits from the random source
+    nonce <- f 16 -- Read 128 bits from the random source
+    let ws = hmacDRBGNew seed nonce (stringToBS "/haskoin:0.1.1/")
+    S.evalStateT m (ws,f)
 
 -- Prime subkey derivation function (from BIP32) with 32 bit counter
-nextSecret :: Monad m => SecretT m FieldN
+nextSecret :: MonadIO m => SecretT m FieldN
 nextSecret = do
-    (s,k,c) <- S.get
-    let msg   = BS.append (encode' $ toMod256 s) (encode' c)
-        (l,r) = split512 $ hmac512 (encode' k) msg
-        res   = s + (toFieldN l)
-    S.put (s,k,c+1)
-    if (toInteger l) < curveN && res > 0
-        then return res
-        else nextSecret
+    (ws,f) <- S.get
+    let (ws',randM) = hmacDRBGGen ws 32 (stringToBS "/haskoin:0.1.1/")
+    case randM of
+        (Just rand) -> do
+            S.put (ws',f)
+            let randI = bsToInteger rand
+            if isIntegerValidKey randI
+                then return $ fromInteger randI
+                else nextSecret
+        Nothing -> do
+            seed <- lift $ f 32 -- Read 256 bits to re-seed the PRNG
+            let ws0 = hmacDRBGRsd ws' seed (stringToBS "/haskoin:0.1.1/")
+            S.put (ws0,f)
+            nextSecret
 
-genPrvKey :: Monad m => SecretT m PrvKey
+genPrvKey :: MonadIO m => SecretT m PrvKey
 genPrvKey = liftM (fromJust . makePrvKey . toInteger) nextSecret
         
 -- Build a private/public key pair from the SecretT monad
 -- Section 3.2.1 http://www.secg.org/download/aid-780/sec1-v2.pdf
-genKeyPair :: Monad m => SecretT m (FieldN, Point)
+genKeyPair :: MonadIO m => SecretT m (FieldN, Point)
 genKeyPair = do
     -- 3.2.1.1 
     d <- nextSecret
@@ -109,7 +135,7 @@ genKeyPair = do
 -- Safely sign a message inside the SecretT monad
 -- SecretT monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-signMessage :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
+signMessage :: MonadIO m => Hash256 -> PrvKey -> SecretT m Signature
 signMessage _ (PrvKey  0) = error "Integer 0 is an invalid private key"
 signMessage _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
 signMessage h d = do

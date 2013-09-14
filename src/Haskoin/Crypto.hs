@@ -3,7 +3,9 @@ module Haskoin.Crypto
 -- ECDSA module
 ( SecretT
 , Signature
-, withSecret
+, withSource
+, devURandom
+, devRandom
 , signMessage
 , verifySignature
 , genPrvKey

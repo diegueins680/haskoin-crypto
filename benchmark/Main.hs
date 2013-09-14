@@ -60,7 +60,7 @@ main = do
             return $! shamirsTrick a b a b
 
     !sigs <- bench elems "Signature creations" $ 
-        withSecret (BS.singleton 1) $! forM priv (signMessage msg) 
+        withSource devURandom $! forM priv (signMessage msg) 
         
     bench elems "Signature verifications" $ 
         forM (sigs `zip` pub) $ \(s,q) -> 

@@ -4,10 +4,11 @@ import Test.HUnit
 import Test.Framework
 import Test.Framework.Providers.HUnit
 
-import qualified Data.ByteString as BS
+import Control.Monad (replicateM_)
+import Control.Monad.Trans (liftIO)
 
-import Control.Monad.Identity
 import Data.Maybe
+import qualified Data.ByteString as BS
 
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Ring
@@ -44,7 +45,11 @@ pub1C = derivePubKey sec1C
 pub2C = derivePubKey sec2C
 
 tests =
-    [ testGroup "bitcoind /src/test/key_tests.cpp" $
+    [ testGroup "ECDSA PRNG unit tests"
+        [ testCase "signMessage produces unique sigantures" uniqueSigs
+        , testCase "genPrvKey produces unique keys" uniqueKeys
+        ] 
+    , testGroup "bitcoind /src/test/key_tests.cpp" $
         [ testCase "Decode Valid WIF" checkPrivkey
         , testCase "Decode Invalid WIF" checkInvalidKey
         , testCase "Check private key compression" checkPrvKeyCompressed
@@ -54,6 +59,30 @@ tests =
         ( map (\x -> (testCase ("Check sig: " ++ (show x)) 
                 (checkSignatures $ doubleHash256 $ stringToBS x))) sigMsg )
     ]
+
+uniqueSigs :: Assertion
+uniqueSigs = do
+    let msg = hash256 $ BS.pack [0..19]
+        prv = fromJust $ makePrvKey 0x987654321
+    ((r1,s1),(r2,s2),(r3,s3)) <- liftIO $ withSource devURandom $ do
+        (Signature a b) <- signMessage msg prv
+        (Signature c d) <- signMessage msg prv
+        replicateM_ 20 $ signMessage msg prv
+        (Signature e f) <- signMessage msg prv
+        return $ ((a,b),(c,d),(e,f))
+    assertBool "DiffSig" $ 
+        r1 /= r2 && r1 /= r3 && r2 /= r3 &&
+        s1 /= s2 && s1 /= s3 && s2 /= s3
+
+uniqueKeys :: Assertion
+uniqueKeys = do
+    (k1,k2,k3) <- liftIO $ withSource devURandom $ do
+        a <- genPrvKey
+        b <- genPrvKey
+        replicateM_ 20 genPrvKey
+        c <- genPrvKey
+        return (a,b,c)
+    assertBool "DiffKey" $ k1 /= k2 && k1 /= k3 && k2 /= k3
 
 checkPrivkey = do
     assertBool "Key 1"  $ isJust $ fromWIF strSecret1
@@ -83,6 +112,12 @@ checkMatchingAddress = do
     assertBool "Key 2C" $ addr2C == (addrToBase58 $ pubKeyAddr pub2C)
     
 checkSignatures h = do
+    (sign1, sign2, sign1C, sign2C) <- liftIO $ withSource devURandom $ do
+        a <- signMessage h sec1
+        b <- signMessage h sec2
+        c <- signMessage h sec1C
+        d <- signMessage h sec2C
+        return (a,b,c,d)
     assertBool "Key 1, Sign1"   $ verifySignature h sign1 pub1
     assertBool "Key 1, Sign2"   $ not $ verifySignature h sign2 pub1
     assertBool "Key 1, Sign1C"  $ verifySignature h sign1C pub1
@@ -99,13 +134,5 @@ checkSignatures h = do
     assertBool "Key 2C, Sign2"  $ verifySignature h sign2 pub2C
     assertBool "Key 2C, Sign1C" $ not $ verifySignature h sign1C pub2C
     assertBool "Key 2C, Sign2C" $ verifySignature h sign2C pub2C
-    where 
-        (sign1, sign2, sign1C, sign2C) = 
-            runIdentity $ withSecret (BS.singleton 1) $ do
-                a <- signMessage h sec1
-                b <- signMessage h sec2
-                c <- signMessage h sec1C
-                d <- signMessage h sec2C
-                return (a,b,c,d)
 
 

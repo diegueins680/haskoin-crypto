@@ -26,9 +26,7 @@ tests :: [Test]
 tests = 
     [ testGroup "ECDSA signatures"
         [ testProperty "verify( sign(msg) ) = True" signAndVerify
-        , testProperty "Signatures in ECDSA monad are unique" uniqueSignatures
         , testProperty "S component of a signature is even" evenSig
-        , testProperty "private key generations are different" diffKey
         ],
       testGroup "ECDSA Binary"
         [ testProperty "get( put(Sig) ) = Sig" getPutSig
@@ -38,27 +36,16 @@ tests =
 
 {- ECDSA Signatures -}
 
-signAndVerify :: Hash256 -> PrvKey -> BS.ByteString -> Bool
-signAndVerify msg d bs = verifySignature msg s q
-    where q = derivePubKey d
-          s = runIdentity $ withSecret bs (signMessage msg d)
+signAndVerify :: Hash256 -> FieldN -> FieldN -> Property
+signAndVerify msg k n = k > 0 && n > 0 ==> case sM of
+    (Just s) -> verifySignature msg s (PubKey kP)
+    Nothing  -> True -- very bad luck
+    where kP = mulPoint k curveG
+          nP = mulPoint n curveG
+          sM = unsafeSignMessage msg k (n,nP)
            
-uniqueSignatures :: Hash256 -> PrvKey -> BS.ByteString -> Bool
-uniqueSignatures msg d bs = r /= r' && s /= s'
-    where ((r,s),(r',s')) = runIdentity $ withSecret bs $ do
-            (Signature a b) <- signMessage msg d
-            (Signature c d) <- signMessage msg d
-            return ((a,b),(c,d))
-
 evenSig :: Signature -> Bool
 evenSig (Signature _ (Ring s)) = s `mod` 2 == 0
-
-diffKey :: BS.ByteString -> Bool
-diffKey bs = runIdentity $ withSecret bs $ do
-    a <- genPrvKey
-    b <- genPrvKey
-    c <- genPrvKey
-    return $ a /= b && a /= c && b /= c
 
 {- ECDSA Binary -}
 
