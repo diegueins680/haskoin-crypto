@@ -60,11 +60,11 @@ main = do
             return $! shamirsTrick a b a b
 
     !sigs <- bench elems "Signature creations" $ 
-        withSource devURandom $! forM priv (signMessage msg) 
+        withSource devURandom $! forM priv (signMsg msg) 
         
     bench elems "Signature verifications" $ 
         forM (sigs `zip` pub) $ \(s,q) -> 
-            return $! verifySignature msg s q
+            return $! verifySig msg s q
 
 testRing :: Int -> FieldN
 testRing max = go 2 0

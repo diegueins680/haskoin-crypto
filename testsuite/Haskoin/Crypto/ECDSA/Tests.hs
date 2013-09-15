@@ -26,6 +26,7 @@ tests :: [Test]
 tests = 
     [ testGroup "ECDSA signatures"
         [ testProperty "verify( sign(msg) ) = True" signAndVerify
+        , testProperty "verify( detSign(msg) ) = True" signAndVerifyD
         , testProperty "S component of a signature is even" evenSig
         ],
       testGroup "ECDSA Binary"
@@ -38,11 +39,15 @@ tests =
 
 signAndVerify :: Hash256 -> FieldN -> FieldN -> Property
 signAndVerify msg k n = k > 0 && n > 0 ==> case sM of
-    (Just s) -> verifySignature msg s (PubKey kP)
+    (Just s) -> verifySig msg s (PubKey kP)
     Nothing  -> True -- very bad luck
     where kP = mulPoint k curveG
           nP = mulPoint n curveG
-          sM = unsafeSignMessage msg k (n,nP)
+          sM = unsafeSignMsg msg k (n,nP)
+
+signAndVerifyD :: Hash256 -> TestPrvKeyC -> Bool
+signAndVerifyD msg (TestPrvKeyC k) = verifySig msg (detSignMsg msg k) p
+    where p = derivePubKey k
            
 evenSig :: Signature -> Bool
 evenSig (Signature _ (Ring s)) = s `mod` 2 == 0

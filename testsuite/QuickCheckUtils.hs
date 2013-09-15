@@ -69,7 +69,7 @@ instance Arbitrary Signature where
         prv <- runPrvKey <$> (arbitrary :: Gen PrvKey)
         non <- runPrvKey <$> (arbitrary :: Gen PrvKey)
         let pub  = mulPoint non curveG
-            sigM = unsafeSignMessage msg prv (non,pub)
+            sigM = unsafeSignMsg msg prv (non,pub)
         case sigM of
             (Just sig) -> return sig
             Nothing    -> arbitrary 

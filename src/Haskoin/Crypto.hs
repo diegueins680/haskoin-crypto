@@ -6,8 +6,9 @@ module Haskoin.Crypto
 , withSource
 , devURandom
 , devRandom
-, signMessage
-, verifySignature
+, signMsg
+, detSignMsg
+, verifySig
 , genPrvKey
 
 -- Hash module

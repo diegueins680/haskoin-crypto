@@ -27,9 +27,6 @@ which provides the following advantages:
 ## Synopsis
 
 ```haskell
-    -- Access to /dev/random
-    import System.IO
-
     import Control.Applicative ((<$>))
     import Control.Monad.Trans (liftIO)
 
@@ -42,20 +39,17 @@ which provides the following advantages:
     import Haskoin.Crypto
     import Haskoin.Util (bsToInteger)
 
-    -- Generate a random Integer with 256 bits of entropy
-    -- You should probably use /dev/random in production
-    random256 :: IO BS.ByteString
-    random256 = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet 32
-
     main :: IO ()
     main = do
 
         -- Build an Integer from a random source
-        rnd <- bsToInteger <$> random256
+        rnd <- bsToInteger <$> (devURandom 32)
 
+        -- Test if Integer rnd is in the range [1, N-1]
+        let vld  = isValidPrvKey rnd
             -- Build a private key from a random Integer
-            -- Will fail if random256 is not > 0 and < curve order N
-        let prv = fromJust $ makePrvKey rnd
+            -- Will fail if rnd is not in the range [1, N-1]
+            prv  = fromJust $ makePrvKey rnd
             -- Derive the public key from a private key
             pub  = derivePubKey prv
             -- Compute the bitcoin address from the public key
@@ -65,46 +59,54 @@ which provides the following advantages:
             -- Deserialize a private key from WIF format
             prv' = fromWIF wif
 
-            -- Serialize and de-serialize a public key
-            -- See Data.Binary for more details
+        -- Serialize and de-serialize a public key
+        -- See Data.Binary for more details
         let pubBin = encode pub
             pub'   = case decodeOrFail pubBin of
                 (Left  (_, _, err)) -> error err
                 (Right (_, _, res)) -> res :: PubKey
 
+        -- Create a message in ByteString format
+        let msg  = BS.pack [1,3,3,7]
+            -- Compute two rounds of SHA-256
+            hash = doubleHash256 msg
+            -- Deterministically sign messages. Both signatures here are equal
+            dSig1 = detSignMsg hash prv
+            dSig2 = detSignMsg hash prv
+            -- Verify a signature
+            dVer  = verifySig hash dSig1 pub
+
         -- Initialize a PRNG environment for creating signatures
-        -- You should probably use devRandom in production
         withSource devURandom $ do 
 
             -- Generate private keys derived from the internal PRNG
             prv1 <- genPrvKey
             prv2 <- genPrvKey
 
-                -- Create a message in ByteString format
-            let msg = BS.pack [1,3,3,7]
-                -- Compute two rounds of SHA-256
-                hash = doubleHash256 msg
-
             -- Signatures are signed with nonces derived from the internal PRNG
-            sig1 <- signMessage hash prv
-            sig2 <- signMessage hash prv
-
-            liftIO $ print sig1
-            liftIO $ print sig2
+            sig1 <- signMsg hash prv
+            sig2 <- signMsg hash prv
 
             -- Verify signatures
-            let ver1 = verifySignature hash sig1 pub
-                ver2 = verifySignature hash sig2 pub
+            let ver1 = verifySig hash sig1 pub
+                ver2 = verifySig hash sig2 pub
 
-                -- Serialize and de-serialize a signature
-                -- See Data.Binary for more details
+            -- Serialize and de-serialize a signature
+            -- See Data.Binary for more details
             let sigBin = encode sig1
                 -- Deserialize a signature
                 sig1'  = case decodeOrFail sigBin of
                     (Left  (_, _, err)) -> error err
                     (Right (_, _, res)) -> res :: Signature
 
-            return ()
+            -- Print some results
+            liftIO $ do
+                print $ "Deterministic Signature 1: " ++ (show dSig1)
+                print $ "Deterministic Signature 2: " ++ (show dSig2)
+                print $ "Random Signature 1: " ++ (show sig1)
+                print $ "Random Signature 2: " ++ (show sig2)
+                print $ "Signature verification: " 
+                    ++ (show dVer) ++" " ++ (show ver1) ++ " " ++ (show ver2)
 ```
 
 ## Usage
@@ -236,7 +238,7 @@ For more details on the WIF format, check out:
 ```
 
 `SecretT` is essentially a monad wrapping a HMAC DRBG SHA-256. `SecretT`
-provides a safe context for signing messages with `signMessage` as this will
+provides a safe context for signing messages with `signMsg` as this will
 not re-use the same **k** nonce. Remember that re-using the same **k** nonce
 for two signatures will expose your private key.
 
@@ -264,7 +266,7 @@ source. You can use them like this:
 
 ```haskell
     withSource devRandom $ do
-        sig <- signMessage msg key
+        sig <- signMsg msg key
         k   <- genPrvKey
 ```
 
@@ -275,11 +277,25 @@ source. You can use them like this:
 Data type describing an ECDSA signature.
 
 ```haskell
-    signMessage :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
+    signMsg :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 ```
 
-`signMessage` should be called withing the `SecretT` monad to safely sign the
+`signMsg` should be called withing the `SecretT` monad to safely sign the
 hash of a message.
+
+We also provide an implementation of deterministic signatures as defined in
+[RFC 6979](http://tools.ietf.org/html/rfc6979). It is called *deterministic*
+signing because the secret **k** nonce is computed in a deterministic way from
+a hash of the message and private key.
+
+```haskell
+    detSignMsg :: Hash256 -> PrvKey -> Signature
+```
+
+Deterministic signing is useful to validate an implementation against known
+test vectors. It is much harder to verify the correctness of an implementation
+when **k** nonces are produced randomly. This property comes in handy to verify
+untrusted hardware wallets. 
 
 A `Signature` is an instance of `Data.Binary` and can be
 serialized/de-serialized using the `encode` and `decodeOrFail` functions. Below
@@ -304,7 +320,7 @@ is an example describing how to use the serialization interface.
 To verify a `Signature`:
 
 ```haskell
-    verifySignature :: Hash256 -> Signature -> PubKey -> Bool
+    verifySig :: Hash256 -> Signature -> PubKey -> Bool
 ```
 
 ### Digests

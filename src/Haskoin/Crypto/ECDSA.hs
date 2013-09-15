@@ -4,9 +4,10 @@ module Haskoin.Crypto.ECDSA
 , withSource
 , devURandom
 , devRandom
-, signMessage
-, unsafeSignMessage
-, verifySignature
+, signMsg
+, detSignMsg
+, unsafeSignMsg
+, verifySig
 , genPrvKey
 ) where
 
@@ -34,6 +35,7 @@ import qualified Data.ByteString as BS
     , append
     , splitAt
     , hGet
+    , empty
     )
   
 import Haskoin.Util 
@@ -58,6 +60,7 @@ import Haskoin.Crypto.Keys
     , PubKey(..)
     , curveG
     , makePrvKey
+    , putPrvKey
     )
 import Haskoin.Crypto.Point 
     ( Point
@@ -135,24 +138,46 @@ genKeyPair = do
 -- Safely sign a message inside the SecretT monad
 -- SecretT monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-signMessage :: MonadIO m => Hash256 -> PrvKey -> SecretT m Signature
-signMessage _ (PrvKey  0) = error "Integer 0 is an invalid private key"
-signMessage _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
-signMessage h d = do
+signMsg :: MonadIO m => Hash256 -> PrvKey -> SecretT m Signature
+signMsg _ (PrvKey  0) = error "Integer 0 is an invalid private key"
+signMsg _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
+signMsg h d = do
     -- 4.1.3.1
     (k,p) <- genKeyPair
-    case unsafeSignMessage h (runPrvKey d) (k,p) of
+    case unsafeSignMsg h (runPrvKey d) (k,p) of
         (Just sig) -> return sig
         -- If signing failed, retry with a new nonce
-        Nothing    -> signMessage h d
+        Nothing    -> signMsg h d
 
+-- RFC 6979 (http://tools.ietf.org/html/rfc6979)
+-- ECDSA deterministic signatures
+detSignMsg :: Hash256 -> PrvKey -> Signature
+detSignMsg _ (PrvKey  0) = error "Integer 0 is an invalid private key"
+detSignMsg _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
+detSignMsg h d = go ws
+    where ws = hmacDRBGNew d' (encode' h) BS.empty
+          d' = toStrictBS $ runPut $ putPrvKey d -- encode to 32 bytes 
+          go ws0 = case hmacDRBGGen ws0 32 BS.empty of
+              (ws1, Just k) -> 
+                  let kI = bsToInteger k
+                      k' = fromIntegral kI
+                      p  = mulPoint k' curveG
+                      d' = runPrvKey d
+                      in if isIntegerValidKey kI
+                            then case unsafeSignMsg h d' (k',p) of
+                                (Just sig) -> sig
+                                Nothing    -> go ws1
+                            else go ws1
+                   -- If this happens to you, you should be playing the lottery
+              _ -> error $ "Impossible to generate a deterministic signature"
+          
 -- Signs a message by providing the nonce
 -- Re-using the same nonce twice will expose the private keys
--- Use signMessage within the SecretT monad instead
+-- Use signMsg within the SecretT monad or detSignMsg instead
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-unsafeSignMessage :: Hash256 -> FieldN -> (FieldN, Point) -> Maybe Signature
-unsafeSignMessage _ 0 _ = Nothing
-unsafeSignMessage h d (k,p) = do
+unsafeSignMsg :: Hash256 -> FieldN -> (FieldN, Point) -> Maybe Signature
+unsafeSignMsg _ 0 _ = Nothing
+unsafeSignMsg h d (k,p) = do
     -- 4.1.3.1 (4.1.3.2 not required)
     (x,_) <- getAffine p
     -- 4.1.3.3
@@ -169,11 +194,11 @@ unsafeSignMessage h d (k,p) = do
     return $ Signature r s
 
 -- Section 4.1.4 http://www.secg.org/download/aid-780/sec1-v2.pdf
-verifySignature :: Hash256 -> Signature -> PubKey -> Bool
+verifySig :: Hash256 -> Signature -> PubKey -> Bool
 -- 4.1.4.1 (r and s can not be zero)
-verifySignature _ (Signature 0 _) _ = False
-verifySignature _ (Signature _ 0) _ = False
-verifySignature h (Signature r s) q = 
+verifySig _ (Signature 0 _) _ = False
+verifySig _ (Signature _ 0) _ = False
+verifySig h (Signature r s) q = 
     case getAffine p of
         Nothing      -> False
         -- 4.1.4.7 / 4.1.4.8

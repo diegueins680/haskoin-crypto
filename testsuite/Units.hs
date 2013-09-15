@@ -46,7 +46,7 @@ pub2C = derivePubKey sec2C
 
 tests =
     [ testGroup "ECDSA PRNG unit tests"
-        [ testCase "signMessage produces unique sigantures" uniqueSigs
+        [ testCase "signMsg produces unique sigantures" uniqueSigs
         , testCase "genPrvKey produces unique keys" uniqueKeys
         ] 
     , testGroup "bitcoind /src/test/key_tests.cpp" $
@@ -65,10 +65,10 @@ uniqueSigs = do
     let msg = hash256 $ BS.pack [0..19]
         prv = fromJust $ makePrvKey 0x987654321
     ((r1,s1),(r2,s2),(r3,s3)) <- liftIO $ withSource devURandom $ do
-        (Signature a b) <- signMessage msg prv
-        (Signature c d) <- signMessage msg prv
-        replicateM_ 20 $ signMessage msg prv
-        (Signature e f) <- signMessage msg prv
+        (Signature a b) <- signMsg msg prv
+        (Signature c d) <- signMsg msg prv
+        replicateM_ 20 $ signMsg msg prv
+        (Signature e f) <- signMsg msg prv
         return $ ((a,b),(c,d),(e,f))
     assertBool "DiffSig" $ 
         r1 /= r2 && r1 /= r3 && r2 /= r3 &&
@@ -113,26 +113,26 @@ checkMatchingAddress = do
     
 checkSignatures h = do
     (sign1, sign2, sign1C, sign2C) <- liftIO $ withSource devURandom $ do
-        a <- signMessage h sec1
-        b <- signMessage h sec2
-        c <- signMessage h sec1C
-        d <- signMessage h sec2C
+        a <- signMsg h sec1
+        b <- signMsg h sec2
+        c <- signMsg h sec1C
+        d <- signMsg h sec2C
         return (a,b,c,d)
-    assertBool "Key 1, Sign1"   $ verifySignature h sign1 pub1
-    assertBool "Key 1, Sign2"   $ not $ verifySignature h sign2 pub1
-    assertBool "Key 1, Sign1C"  $ verifySignature h sign1C pub1
-    assertBool "Key 1, Sign2C"  $ not $ verifySignature h sign2C pub1
-    assertBool "Key 2, Sign1"   $ not $ verifySignature h sign1 pub2
-    assertBool "Key 2, Sign2"   $ verifySignature h sign2 pub2
-    assertBool "Key 2, Sign1C"  $ not $ verifySignature h sign1C pub2
-    assertBool "Key 2, Sign2C"  $ verifySignature h sign2C pub2
-    assertBool "Key 1C, Sign1"  $ verifySignature h sign1 pub1C
-    assertBool "Key 1C, Sign2"  $ not $ verifySignature h sign2 pub1C
-    assertBool "Key 1C, Sign1C" $ verifySignature h sign1C pub1C
-    assertBool "Key 1C, Sign2C" $ not $ verifySignature h sign2C pub1C
-    assertBool "Key 2C, Sign1"  $ not $ verifySignature h sign1 pub2C
-    assertBool "Key 2C, Sign2"  $ verifySignature h sign2 pub2C
-    assertBool "Key 2C, Sign1C" $ not $ verifySignature h sign1C pub2C
-    assertBool "Key 2C, Sign2C" $ verifySignature h sign2C pub2C
+    assertBool "Key 1, Sign1"   $ verifySig h sign1 pub1
+    assertBool "Key 1, Sign2"   $ not $ verifySig h sign2 pub1
+    assertBool "Key 1, Sign1C"  $ verifySig h sign1C pub1
+    assertBool "Key 1, Sign2C"  $ not $ verifySig h sign2C pub1
+    assertBool "Key 2, Sign1"   $ not $ verifySig h sign1 pub2
+    assertBool "Key 2, Sign2"   $ verifySig h sign2 pub2
+    assertBool "Key 2, Sign1C"  $ not $ verifySig h sign1C pub2
+    assertBool "Key 2, Sign2C"  $ verifySig h sign2C pub2
+    assertBool "Key 1C, Sign1"  $ verifySig h sign1 pub1C
+    assertBool "Key 1C, Sign2"  $ not $ verifySig h sign2 pub1C
+    assertBool "Key 1C, Sign1C" $ verifySig h sign1C pub1C
+    assertBool "Key 1C, Sign2C" $ not $ verifySig h sign2C pub1C
+    assertBool "Key 2C, Sign1"  $ not $ verifySig h sign1 pub2C
+    assertBool "Key 2C, Sign2"  $ verifySig h sign2 pub2C
+    assertBool "Key 2C, Sign1C" $ not $ verifySig h sign1C pub2C
+    assertBool "Key 2C, Sign2C" $ verifySig h sign2C pub2C
 
 
