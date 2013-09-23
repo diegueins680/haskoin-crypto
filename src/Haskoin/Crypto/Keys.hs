@@ -117,7 +117,7 @@ instance Binary PubKey where
     -- Section 2.3.4 http://www.secg.org/download/aid-780/sec1-v2.pdf
     get = go =<< getWord8
               -- 2.3.4.1 InfPoint if input is 0x00
-        where go 0 = return $ PubKey InfPoint
+        where go 0 = fail "InfPoint is not a valid public key"
               -- 2.3.4.3 Uncompressed format
               go 4 = getUncompressed
               -- 2.3.4.2 Compressed format

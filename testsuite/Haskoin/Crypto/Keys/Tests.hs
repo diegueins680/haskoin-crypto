@@ -26,6 +26,7 @@ tests =
         , testProperty "size( put(Point) ) = 33 or 65" putPubKeySize
         , testProperty "makeKey( toKey(k) ) = k" makeToKey
         , testProperty "makeKeyU( toKey(k) ) = k" makeToKeyU
+        , testProperty "decoded PubKey is always valid" decodePubKey
         ],
       testGroup "Key formats"
         [ testProperty "fromWIF( toWIF(i) ) = i" fromToWIF
@@ -39,6 +40,7 @@ tests =
         ],
       testGroup "Public Key"
         [ testProperty "Derived public key valid" testDerivedPubKey
+        , testProperty "Derived public key from Integer valid" deriveFromInt
         ],
       testGroup "Key properties"
         [ testProperty "PubKey addition" testAddPubKey
@@ -68,6 +70,10 @@ makeToKeyU :: FieldN -> Property
 makeToKeyU i = i /= 0 ==> 
     (fromPrvKey $ makeKey (fromIntegral i)) == (fromIntegral i)
     where makeKey = fromJust . makePrvKeyU
+
+decodePubKey :: BS.ByteString -> Bool
+decodePubKey bs = either (const True) (isValidPubKey . lst) $ decodeOrFail' bs
+    where lst (a,b,c) = c
 
 {- Key formats -}
 
@@ -101,6 +107,9 @@ testPrivateUnCompressed n = n > 0 ==>
 
 testDerivedPubKey :: PrvKey -> Bool
 testDerivedPubKey k = isValidPubKey $ derivePubKey k
+
+deriveFromInt :: Integer -> Bool
+deriveFromInt i = maybe True (isValidPubKey . derivePubKey) $ makePrvKey i
 
 {- Key properties -}
 
