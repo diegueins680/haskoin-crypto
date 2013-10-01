@@ -13,6 +13,7 @@ import Data.Binary.Put
 import qualified Data.ByteString as BS
 
 import QuickCheckUtils
+import Haskoin.Crypto.Arbitrary
 
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Point

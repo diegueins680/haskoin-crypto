@@ -14,6 +14,7 @@ import Data.Binary.Put
 import qualified Data.ByteString as BS
 
 import QuickCheckUtils
+import Haskoin.Crypto.Arbitrary
 
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Point

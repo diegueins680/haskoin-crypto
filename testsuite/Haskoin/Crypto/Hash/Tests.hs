@@ -7,6 +7,7 @@ import Test.Framework.Providers.QuickCheck2
 import qualified Data.ByteString as BS
 
 import QuickCheckUtils
+import Haskoin.Crypto.Arbitrary
 
 import Haskoin.Crypto.Hash
 import Haskoin.Util
