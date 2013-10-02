@@ -32,7 +32,7 @@ tests =
         ],
       testGroup "ECDSA Binary"
         [ testProperty "get( put(Sig) ) = Sig" getPutSig
-        , testProperty "Verify DER of put(Sig)" putSigSize
+        , testProperty "Encoded signature is canonical" testIsCanonical
         ]
     ]
 
@@ -55,18 +55,51 @@ evenSig (Signature _ (Ring s)) = s `mod` 2 == 0
 
 {- ECDSA Binary -}
 
-getPutSig :: Signature -> Property
-getPutSig sig@(Signature r s) = r > 0 && s > 0 ==> 
-    sig == runGet get (runPut $ put sig)
+getPutSig :: Signature -> Bool
+getPutSig sig@(Signature r s) = sig == (decode' $ encode' sig)
 
-putSigSize :: Signature -> Property
-putSigSize sig@(Signature r s) = r > 0 && s > 0 ==>
-   (  a == fromIntegral 0x30    -- DER type is Sequence
-   && b <= fromIntegral 70      -- Maximum length is 35 + 35
-   && l == fromIntegral (b + 2) -- Advertised length matches
-   )
-   where bs = toStrictBS $ runPut $ put sig
-         a  = BS.index bs 0
-         b  = BS.index bs 1
-         l  = BS.length bs
+-- github.com/bitcoin/bitcoin/blob/master/src/script.cpp
+-- from function IsCanonicalSignature
+testIsCanonical :: Signature -> Bool
+testIsCanonical sig@(Signature r s) = not $
+    -- Non-canonical signature: too short
+    (len < 8) ||
+    -- Non-canonical signature: too long
+    (len > 72) ||
+    -- Non-canonical signature: wrong type
+    (BS.index s 0 /= 0x30) ||
+    -- Non-canonical signature: wrong length marker
+    (BS.index s 1 /= len - 2) ||
+    -- Non-canonical signature: S length misplaced
+    (5 + rlen >= len) || 
+    -- Non-canonical signature: R+S length mismatch
+    (rlen + slen + 6 /= len) ||
+    -- Non-canonical signature: R value type mismatch
+    (BS.index s 2 /= 0x02) ||
+    -- Non-canonical signature: R length is zero
+    (rlen == 0) ||
+    -- Non-canonical signature: R value negative
+    (testBit (BS.index s 4) 7) ||
+    -- Non-canonical signature: R value excessively padded
+    (  rlen > 0 
+    && BS.index s 4 == 0 
+    && not (testBit (BS.index s 5) 7)
+    ) ||
+    -- Non-canonical signature: S value type mismatch
+    (BS.index s (fromIntegral rlen+4) /= 0x02) ||
+    -- Non-canonical signature: S length is zero
+    (slen == 0) ||
+    -- Non-canonical signature: S value negative
+    (testBit (BS.index s (fromIntegral rlen+6)) 7) ||
+    -- Non-canonical signature: S value excessively padded
+    (  slen > 0 
+    && BS.index s (fromIntegral rlen+6) == 0 
+    && not (testBit (BS.index s (fromIntegral rlen+7)) 7)
+    ) ||
+    -- Non-canonical signature: S value odd
+    (testBit (BS.index s (fromIntegral $ rlen+slen+5)) 0) 
+    where s = encode' sig
+          len = fromIntegral $ BS.length s
+          rlen = BS.index s 3
+          slen = BS.index s (fromIntegral rlen + 5)
 

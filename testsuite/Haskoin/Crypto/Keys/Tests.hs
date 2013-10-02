@@ -24,7 +24,7 @@ tests :: [Test]
 tests = 
     [ testGroup "PubKey Binary"
         [ testProperty "get( put(PubKey) ) = PubKey" getPutPubKey
-        , testProperty "size( put(Point) ) = 33 or 65" putPubKeySize
+        , testProperty "is public key canonical" isCanonicalPubKey
         , testProperty "makeKey( toKey(k) ) = k" makeToKey
         , testProperty "makeKeyU( toKey(k) ) = k" makeToKeyU
         , testProperty "decoded PubKey is always valid" decodePubKey
@@ -54,12 +54,18 @@ tests =
 getPutPubKey :: PubKey -> Bool
 getPutPubKey p = p == (decode' $ encode' p)
 
-putPubKeySize :: PubKey -> Bool
-putPubKeySize p = case p of
-    (PubKey  InfPoint) -> BS.length bs == 1
-    (PubKey  _)        -> BS.length bs == 33
-    (PubKeyU InfPoint) -> BS.length bs == 1
-    (PubKeyU _)        -> BS.length bs == 65
+-- github.com/bitcoin/bitcoin/blob/master/src/script.cpp
+-- from function IsCanonicalPubKey
+isCanonicalPubKey :: PubKey -> Bool
+isCanonicalPubKey p = not $
+    -- Non-canonical public key: too short
+    (BS.length bs < 33) ||
+    -- Non-canonical public key: invalid length for uncompressed key
+    (BS.index bs 0 == 4 && BS.length bs /= 65) ||
+    -- Non-canonical public key: invalid length for compressed key
+    (BS.index bs 0 `elem` [2,3] && BS.length bs /= 33) ||
+    -- Non-canonical public key: compressed nor uncompressed
+    (not $ BS.index bs 0 `elem` [2,3,4])
     where bs = encode' p
 
 makeToKey :: FieldN -> Property

@@ -1,6 +1,7 @@
 module Haskoin.Crypto.Arbitrary () where
 
 import Test.QuickCheck
+import Haskoin.Util.Arbitrary
 
 import Control.Monad.Identity
 import Control.Applicative ((<$>),(<*>))
@@ -8,13 +9,17 @@ import Control.Applicative ((<$>),(<*>))
 import Data.Maybe
 
 import Haskoin.Crypto.Point
+import Haskoin.Crypto.Hash
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Base58
 
 instance RingMod n => Arbitrary (Ring n) where
-    arbitrary = fromInteger <$> (arbitrary :: Gen Integer)
+    arbitrary = fromInteger <$> arbitrary
+
+instance Arbitrary CheckSum32 where
+    arbitrary = chksum32 <$> arbitrary
 
 instance Arbitrary Point where
     arbitrary = frequency
@@ -32,16 +37,14 @@ instance Arbitrary PubKey where
 
 instance Arbitrary Address where
     arbitrary = do
-        i <- choose (1,2^160-1) :: Gen Integer
-        elements [ PubKeyAddress $ fromInteger i
-                 , ScriptAddress $ fromInteger i
-                 ]
+        i <- fromInteger <$> choose (1,2^160-1)
+        elements [PubKeyAddress i, ScriptAddress i]
 
 instance Arbitrary Signature where
     arbitrary = do
         msg <- arbitrary
-        prv <- runPrvKey <$> (arbitrary :: Gen PrvKey)
-        non <- runPrvKey <$> (arbitrary :: Gen PrvKey)
+        prv <- runPrvKey <$> arbitrary
+        non <- runPrvKey <$> arbitrary
         let pub  = mulPoint non curveG
         case unsafeSignMsg msg prv (non,pub) of
             (Just sig) -> return sig

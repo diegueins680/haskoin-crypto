@@ -246,7 +246,7 @@ instance Binary (Ring ModN) where
         putWord8 0x02 -- Integer type
         let b = integerToBS i
             l = fromIntegral $ BS.length b
-        if BS.head b >= 0x7f 
+        if BS.head b >= 0x80 
             then do
                 putWord8 (l + 1)
                 putWord8 0x00
