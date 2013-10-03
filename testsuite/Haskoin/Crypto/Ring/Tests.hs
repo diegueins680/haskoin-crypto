@@ -266,8 +266,7 @@ getPutModP :: FieldP -> Bool
 getPutModP r = r == (decode' $ encode' r)
 
 putModPSize :: FieldP -> Bool
-putModPSize r = BS.length s == 32
-    where s = toStrictBS $ runPut $ put r
+putModPSize r = BS.length (encode' r) == 32
 
 getPutModN :: FieldN -> Property
 getPutModN r = r > 0 ==> r == (decode' $ encode' r)
@@ -279,7 +278,7 @@ putModNSize r = r > 0 ==>
     && l == fromIntegral (b + 2) -- Advertised length matches
     && c < 0x80     -- High byte is never 1
     )
-    where bs = toStrictBS $ runPut $ put r
+    where bs = encode' r
           a  = BS.index bs 0
           b  = BS.index bs 1
           c  = BS.index bs 2
