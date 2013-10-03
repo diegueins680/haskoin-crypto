@@ -254,30 +254,30 @@ ringToInteger r@(Ring i) = toInteger r == i
 {- Ring Binary -}
 
 getPutHash512 :: Hash512 -> Bool
-getPutHash512 r = r == runGet get (runPut $ put r)
+getPutHash512 r = r == (decode' $ encode' r)
 
 getPutHash256 :: Hash256 -> Bool
-getPutHash256 r = r == runGet get (runPut $ put r)
+getPutHash256 r = r == (decode' $ encode' r)
 
 getPutHash160 :: Hash160 -> Bool
-getPutHash160 r = r == runGet get (runPut $ put r)
+getPutHash160 r = r == (decode' $ encode' r)
 
 getPutModP :: FieldP -> Bool
-getPutModP r = r == runGet get (runPut $ put r)
+getPutModP r = r == (decode' $ encode' r)
 
 putModPSize :: FieldP -> Bool
 putModPSize r = BS.length s == 32
     where s = toStrictBS $ runPut $ put r
 
 getPutModN :: FieldN -> Property
-getPutModN r = r > 0 ==> r == runGet get (runPut $ put r)
+getPutModN r = r > 0 ==> r == (decode' $ encode' r)
 
 putModNSize :: FieldN -> Property
 putModNSize r = r > 0 ==>
-    (  a == fromIntegral 0x02    -- DER type is Integer
-    && b <= fromIntegral 33      -- Can't be bigger than 32 + 0x00 padding
+    (  a == 0x02    -- DER type is Integer
+    && b <= 33      -- Can't be bigger than 32 + 0x00 padding
     && l == fromIntegral (b + 2) -- Advertised length matches
-    && c <= fromIntegral 0x7f    -- High byte is never 1
+    && c < 0x80     -- High byte is never 1
     )
     where bs = toStrictBS $ runPut $ put r
           a  = BS.index bs 0
