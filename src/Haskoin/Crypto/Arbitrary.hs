@@ -1,4 +1,7 @@
-module Haskoin.Crypto.Arbitrary () where
+module Haskoin.Crypto.Arbitrary 
+( genPrvKeyC
+, genPrvKeyU
+)  where
 
 import Test.QuickCheck
 import Haskoin.Util.Arbitrary
@@ -27,10 +30,18 @@ instance Arbitrary Point where
         , (9, (flip mulPoint $ curveG) <$> (arbitrary :: Gen FieldN))
         ]
 
+genPrvKeyC :: Gen PrvKey
+genPrvKeyC = do
+    i <- fromInteger <$> choose (1, curveN-1)
+    return $ fromJust $ makePrvKey i
+
+genPrvKeyU :: Gen PrvKey
+genPrvKeyU = do
+    i <- fromInteger <$> choose (1, curveN-1)
+    return $ fromJust $ makePrvKeyU i
+
 instance Arbitrary PrvKey where
-    arbitrary = do
-        i <- fromInteger <$> choose (1, curveN-1)
-        fromJust <$> elements [makePrvKey i, makePrvKeyU i]
+    arbitrary = oneof [genPrvKeyC, genPrvKeyU]
 
 instance Arbitrary PubKey where
     arbitrary = derivePubKey <$> arbitrary

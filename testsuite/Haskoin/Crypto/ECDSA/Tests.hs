@@ -97,7 +97,9 @@ testIsCanonical sig@(Signature r s) = not $
     && not (testBit (BS.index s (fromIntegral rlen+7)) 7)
     ) ||
     -- Non-canonical signature: S value odd
-    (testBit (BS.index s (fromIntegral $ rlen+slen+5)) 0) 
+    (testBit (BS.index s (fromIntegral $ rlen+slen+5)) 0) ||
+    -- Verify against isCanonicalSig function
+    not (isCanonicalSig s)
     where s = encode' sig
           len = fromIntegral $ BS.length s
           rlen = BS.index s 3
