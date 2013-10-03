@@ -84,7 +84,7 @@ newtype Ring n = Ring { runRing :: Integer }
     deriving (Eq, Ord)
 
 instance Show (Ring n) where
-    show = bsToString . bsToHex . integerToBS . runRing
+    show = show . bsToHex . integerToBS . runRing
 
 toFieldN :: Ring n -> FieldN
 toFieldN (Ring i) = fromInteger i
