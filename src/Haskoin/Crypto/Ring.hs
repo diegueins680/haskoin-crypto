@@ -55,7 +55,12 @@ import qualified Data.ByteString as BS
     )
 
 import Haskoin.Crypto.NumberTheory (mulInverse)
-import Haskoin.Util (bsToInteger, integerToBS)
+import Haskoin.Util 
+    ( bsToInteger
+    , integerToBS
+    , bsToHex
+    , bsToString
+    )
 
 type Hash512 = Ring Mod512
 type Hash256 = Ring Mod256
@@ -76,7 +81,10 @@ curveN :: Integer
 curveN = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141 
 
 newtype Ring n = Ring { runRing :: Integer }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord)
+
+instance Show (Ring n) where
+    show = bsToString . bsToHex . integerToBS . runRing
 
 toFieldN :: Ring n -> FieldN
 toFieldN (Ring i) = fromInteger i
