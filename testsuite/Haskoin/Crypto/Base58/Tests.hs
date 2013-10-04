@@ -40,5 +40,5 @@ decodeEncode58Check bs = case decodeBase58Check (encodeBase58Check bs) of
     Nothing  -> False
 
 binAddr58 :: Address -> Bool
-binAddr58 a = (fromJust $ addrFromBase58 $ addrToBase58 a) == a
+binAddr58 a = (fromJust $ base58ToAddr $ addrToBase58 a) == a
 

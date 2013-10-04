@@ -67,6 +67,8 @@ import Haskoin.Util
     ( toStrictBS
     , bsToInteger
     , encode'
+    , stringToBS
+    , bsToString
     )
 
 curveG :: Point
@@ -216,9 +218,9 @@ getPrvKeyU = do
         unless (isJust res) $ fail "Get: PrivateKey is invalid"
         return $ fromJust res
 
-fromWIF :: BS.ByteString -> Maybe PrvKey
-fromWIF bs = do
-    b <- decodeBase58Check bs
+fromWIF :: String -> Maybe PrvKey
+fromWIF str = do
+    b <- decodeBase58Check $ stringToBS str
     guard (BS.head b == 0x80)  -- Check that this is a private key
     case BS.length b of
         33 -> do               -- Uncompressed format
@@ -230,8 +232,8 @@ fromWIF bs = do
             makePrvKey i
         _  -> Nothing          -- Bad length
 
-toWIF :: PrvKey -> BS.ByteString
-toWIF k = encodeBase58Check $ BS.cons 0x80 enc
+toWIF :: PrvKey -> String
+toWIF k = bsToString $ encodeBase58Check $ BS.cons 0x80 enc
     where enc | isPrvKeyU k = bs
               | otherwise   = BS.snoc bs 0x01
           bs = toStrictBS $ runPut $ putPrvKey k

@@ -79,20 +79,16 @@ makeToKeyU i = i /= 0 ==>
     where makeKey = fromJust . makePrvKeyU
 
 decodePubKey :: BS.ByteString -> Bool
-decodePubKey bs = either (const True) (isValidPubKey . lst) $ decodeOrFail' bs
-    where lst (a,b,c) = c
+decodePubKey bs = decodeEither bs True isValidPubKey
 
 {- Key formats -}
 
-fromToWIF :: PrvKey -> Property
-fromToWIF pk = i > 0 ==> pk == (fromJust $ fromWIF $ toWIF pk)
-    where i = runPrvKey pk
+fromToWIF :: PrvKey -> Bool
+fromToWIF pk = pk == (fromJust $ fromWIF $ toWIF pk)
 
-getPutPrv :: PrvKey -> Property
-getPutPrv k@(PrvKey  i) = i > 0 ==> 
-    k == runGet getPrvKey  (runPut $ putPrvKey k)
-getPutPrv k@(PrvKeyU i) = i > 0 ==> 
-    k == runGet getPrvKeyU (runPut $ putPrvKey k)
+getPutPrv :: PrvKey -> Bool
+getPutPrv k@(PrvKey  i) = k == runGet getPrvKey  (runPut $ putPrvKey k)
+getPutPrv k@(PrvKeyU i) = k == runGet getPrvKeyU (runPut $ putPrvKey k)
 
 {- Key Compression -}
 

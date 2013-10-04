@@ -21,17 +21,17 @@ import Haskoin.Util
 -- Unit tests copied from bitcoind implementation
 -- https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp
 
-strSecret1  = stringToBS "5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj"
-strSecret2  = stringToBS "5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3"
-strSecret1C = stringToBS "Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw"
-strSecret2C = stringToBS "L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g"
+strSecret1  = "5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj"
+strSecret2  = "5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3"
+strSecret1C = "Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw"
+strSecret2C = "L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g"
 
-addr1  = stringToBS "1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ"
-addr2  = stringToBS "1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ"
-addr1C = stringToBS "1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs"
-addr2C = stringToBS "1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs"
+addr1  = "1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ"
+addr2  = "1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ"
+addr1C = "1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs"
+addr2C = "1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs"
 
-strAddressBad = stringToBS "1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF"
+strAddressBad = "1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF"
 
 sigMsg = [("Very secret message " ++ (show i) ++ ": 11") | i <- [0..15]]
 

@@ -1,7 +1,7 @@
 module Haskoin.Crypto.Base58
 ( Address(..)
 , addrToBase58
-, addrFromBase58
+, base58ToAddr
 , encodeBase58
 , decodeBase58
 , encodeBase58Check
@@ -34,6 +34,8 @@ import Haskoin.Util
     , decodeOrFail'
     , integerToBS
     , bsToInteger
+    , stringToBS
+    , bsToString
     )
 
 b58String :: String
@@ -98,14 +100,14 @@ data Address = PubKeyAddress { runAddress :: Hash160 } |
                ScriptAddress { runAddress :: Hash160 }
                deriving (Eq, Show)
 
-addrToBase58 :: Address -> BS.ByteString
-addrToBase58 addr = encodeBase58Check $ case addr of
+addrToBase58 :: Address -> String
+addrToBase58 addr = bsToString $ encodeBase58Check $ case addr of
     (PubKeyAddress i) -> BS.cons 0 (encode' $ runAddress addr)
     (ScriptAddress i) -> BS.cons 5 (encode' $ runAddress addr)
 
-addrFromBase58 :: BS.ByteString -> Maybe Address
-addrFromBase58 bs = do
-    val <- decodeBase58Check bs
+base58ToAddr :: String -> Maybe Address
+base58ToAddr str = do
+    val <- decodeBase58Check $ stringToBS str
     case (BS.head val) of
         0 -> return $ PubKeyAddress $ decode' $ BS.tail val
         5 -> return $ ScriptAddress $ decode' $ BS.tail val

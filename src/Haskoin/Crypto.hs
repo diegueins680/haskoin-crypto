@@ -10,7 +10,6 @@ module Haskoin.Crypto
 , detSignMsg
 , verifySig
 , genPrvKey
-, isCanonicalSig
 
 -- Hash module
 , Hash512
@@ -52,7 +51,7 @@ module Haskoin.Crypto
 
 -- Base58 module
 , Address(..)
-, addrFromBase58
+, base58ToAddr
 , addrToBase58
 , encodeBase58
 , decodeBase58

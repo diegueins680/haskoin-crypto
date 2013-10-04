@@ -9,7 +9,6 @@ module Haskoin.Crypto.ECDSA
 , unsafeSignMsg
 , verifySig
 , genPrvKey
-, isCanonicalSig
 ) where
 
 import System.IO
@@ -215,50 +214,6 @@ verifySig h (Signature r s) q =
         u2 = r*s'
         -- 4.1.4.5 (u1*G + u2*q)
         p  = shamirsTrick u1 curveG u2 (runPubKey q)
-
--- github.com/bitcoin/bitcoin/blob/master/src/script.cpp
--- from function IsCanonicalSignature
-isCanonicalSig :: BS.ByteString -> Bool
-isCanonicalSig s = not $
-    -- Non-canonical signature: too short
-    (len < 8) ||
-    -- Non-canonical signature: too long
-    (len > 72) ||
-    -- Non-canonical signature: wrong type
-    (BS.index s 0 /= 0x30) ||
-    -- Non-canonical signature: wrong length marker
-    (BS.index s 1 /= len - 2) ||
-    -- Non-canonical signature: S length misplaced
-    (5 + rlen >= len) || 
-    -- Non-canonical signature: R+S length mismatch
-    (rlen + slen + 6 /= len) ||
-    -- Non-canonical signature: R value type mismatch
-    (BS.index s 2 /= 0x02) ||
-    -- Non-canonical signature: R length is zero
-    (rlen == 0) ||
-    -- Non-canonical signature: R value negative
-    (testBit (BS.index s 4) 7) ||
-    -- Non-canonical signature: R value excessively padded
-    (  rlen > 0 
-    && BS.index s 4 == 0 
-    && not (testBit (BS.index s 5) 7)
-    ) ||
-    -- Non-canonical signature: S value type mismatch
-    (BS.index s (fromIntegral rlen+4) /= 0x02) ||
-    -- Non-canonical signature: S length is zero
-    (slen == 0) ||
-    -- Non-canonical signature: S value negative
-    (testBit (BS.index s (fromIntegral rlen+6)) 7) ||
-    -- Non-canonical signature: S value excessively padded
-    (  slen > 0 
-    && BS.index s (fromIntegral rlen+6) == 0 
-    && not (testBit (BS.index s (fromIntegral rlen+7)) 7)
-    ) ||
-    -- Non-canonical signature: S value odd
-    (testBit (BS.index s (fromIntegral $ rlen+slen+5)) 0) 
-    where len = fromIntegral $ BS.length s
-          rlen = BS.index s 3
-          slen = BS.index s (fromIntegral rlen + 5)
 
 instance Binary Signature where
     get = do
