@@ -81,7 +81,7 @@ testIsCanonical sig@(Signature r s) = not $
     -- Non-canonical signature: R value negative
     (testBit (BS.index s 4) 7) ||
     -- Non-canonical signature: R value excessively padded
-    (  rlen > 0 
+    (  rlen > 1 
     && BS.index s 4 == 0 
     && not (testBit (BS.index s 5) 7)
     ) ||
@@ -92,7 +92,7 @@ testIsCanonical sig@(Signature r s) = not $
     -- Non-canonical signature: S value negative
     (testBit (BS.index s (fromIntegral rlen+6)) 7) ||
     -- Non-canonical signature: S value excessively padded
-    (  slen > 0 
+    (  slen > 1
     && BS.index s (fromIntegral rlen+6) == 0 
     && not (testBit (BS.index s (fromIntegral rlen+7)) 7)
     ) ||
