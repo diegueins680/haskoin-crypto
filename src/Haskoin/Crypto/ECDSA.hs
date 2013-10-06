@@ -41,12 +41,12 @@ import qualified Data.ByteString as BS
     )
   
 import Haskoin.Util 
-    ( toStrictBS
-    , stringToBS
+    ( stringToBS
     , isolate
     , integerToBS
     , bsToInteger
     , encode'
+    , runPut'
     )
 import Haskoin.Crypto.Hash 
     ( hash256
@@ -158,7 +158,7 @@ detSignMsg _ (PrvKey  0) = error "Integer 0 is an invalid private key"
 detSignMsg _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
 detSignMsg h d = go ws
     where ws = hmacDRBGNew d' (encode' h) BS.empty
-          d' = toStrictBS $ runPut $ putPrvKey d -- encode to 32 bytes 
+          d' = runPut' $ putPrvKey d -- encode to 32 bytes 
           go ws0 = case hmacDRBGGen ws0 32 BS.empty of
               (ws1, Just k) -> 
                   let kI = bsToInteger k
@@ -232,7 +232,7 @@ instance Binary Signature where
     put (Signature r 0) = error "0 is an invalid s value in a Signature"
     put (Signature r s) = do
         putWord8 0x30
-        let c = toStrictBS $ runPut $ put r >> put s
+        let c = runPut' $ put r >> put s
         putWord8 (fromIntegral $ BS.length c)
         putByteString c
 

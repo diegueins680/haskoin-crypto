@@ -50,7 +50,7 @@ import qualified Data.ByteString as BS
     , replicate
     )
 
-import Haskoin.Util (toLazyBS, decode')
+import Haskoin.Util (runGet', decode')
 import Haskoin.Crypto.Ring 
     ( Hash512
     , Hash256
@@ -75,25 +75,25 @@ run160 :: BS.ByteString -> BS.ByteString
 run160 = (digestToByteString :: Digest RIPEMD160 -> BS.ByteString) . hash
 
 hash512 :: BS.ByteString -> Hash512
-hash512 bs = runGet get (toLazyBS $ run512 bs)
+hash512 bs = runGet' get (run512 bs)
 
 hash512BS :: BS.ByteString -> BS.ByteString
 hash512BS bs = run512 bs
 
 hash256 :: BS.ByteString -> Hash256
-hash256 bs = runGet get (toLazyBS $ run256 bs)
+hash256 bs = runGet' get (run256 bs)
 
 hash256BS :: BS.ByteString -> BS.ByteString
 hash256BS bs = run256 bs
 
 hash160 :: BS.ByteString -> Hash160
-hash160 bs = runGet get (toLazyBS $ run160 bs)
+hash160 bs = runGet' get (run160 bs)
 
 hash160BS :: BS.ByteString -> BS.ByteString
 hash160BS bs = run160 bs
 
 doubleHash256 :: BS.ByteString -> Hash256
-doubleHash256 bs = runGet get (toLazyBS $ run256 $ run256 bs)
+doubleHash256 bs = runGet' get (run256 $ run256 bs)
 
 doubleHash256BS :: BS.ByteString -> BS.ByteString
 doubleHash256BS bs = run256 $ run256 bs

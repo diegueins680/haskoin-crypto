@@ -64,7 +64,7 @@ import Haskoin.Crypto.Hash
     , hash256BS
     )
 import Haskoin.Util 
-    ( toStrictBS
+    ( runPut'
     , bsToInteger
     , encode'
     , stringToBS
@@ -236,5 +236,5 @@ toWIF :: PrvKey -> String
 toWIF k = bsToString $ encodeBase58Check $ BS.cons 0x80 enc
     where enc | isPrvKeyU k = bs
               | otherwise   = BS.snoc bs 0x01
-          bs = toStrictBS $ runPut $ putPrvKey k
+          bs = runPut' $ putPrvKey k
 
