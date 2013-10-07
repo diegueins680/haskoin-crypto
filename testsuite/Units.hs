@@ -4,10 +4,11 @@ import Test.HUnit
 import Test.Framework
 import Test.Framework.Providers.HUnit
 
-import Control.Monad (replicateM_)
+import Control.Monad (replicateM_, liftM2)
 import Control.Monad.Trans (liftIO)
 
 import Data.Maybe
+import Data.Binary
 import qualified Data.ByteString as BS
 
 import Haskoin.Crypto.Keys
@@ -58,7 +59,15 @@ tests =
         ] ++ 
         ( map (\x -> (testCase ("Check sig: " ++ (show x)) 
                 (checkSignatures $ doubleHash256 $ stringToBS x))) sigMsg )
+    , testGroup "Trezor RFC 6979 Test Vectors"
+        [ testCase "RFC 6979 Test Vector 1" (testDetSigning $ detVec !! 0)
+        , testCase "RFC 6979 Test Vector 2" (testDetSigning $ detVec !! 1)
+        , testCase "RFC 6979 Test Vector 3" (testDetSigning $ detVec !! 2)
+        , testCase "RFC 6979 Test Vector 4" (testDetSigning $ detVec !! 3)
+        ] 
     ]
+
+{- ECDSA PRNG unit tests -}
 
 uniqueSigs :: Assertion
 uniqueSigs = do
@@ -83,6 +92,8 @@ uniqueKeys = do
         c <- genPrvKey
         return (a,b,c)
     assertBool "DiffKey" $ k1 /= k2 && k1 /= k3 && k2 /= k3
+
+{- bitcoind /src/test/key_tests.cpp -}
 
 checkPrivkey = do
     assertBool "Key 1"  $ isJust $ fromWIF strSecret1
@@ -134,5 +145,38 @@ checkSignatures h = do
     assertBool "Key 2C, Sign2"  $ verifySig h sign2 pub2C
     assertBool "Key 2C, Sign1C" $ not $ verifySig h sign1C pub2C
     assertBool "Key 2C, Sign2C" $ verifySig h sign2C pub2C
+
+
+{- Trezor RFC 6979 Test Vectors -}
+-- github.com/trezor/python-ecdsa/blob/master/ecdsa/test_pyecdsa.py
+
+detVec :: [(String,Integer,String)]
+detVec = 
+    [ 
+      ( "Satoshi Nakamoto"
+      , 0x01
+      , "934b1ea10a4b3c1757e2b0c017d0b6143ce3c9a7e6a4a49860d7a6ab210ee3d8dbbd3162d46e9f9bef7feb87c16dc13b4f6568a87f4e83f728e2443ba586675c"
+      )
+    , ( "All those moments will be lost in time, like tears in rain. Time to die..."
+      , 0x01
+      , "8600dbd41e348fe5c9465ab92d23e3db8b98b873beecd930736488696438cb6bab8019bbd8b6924cc4099fe625340ffb1eaac34bf4477daa39d0835429094520"
+      )
+    , ( "Satoshi Nakamoto"
+      , 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
+      , "fd567d121db66e382991534ada77a6bd3106f0a1098c231e47993447cd6af2d094c632f14e4379fc1ea610a3df5a375152549736425ee17cebe10abbc2a2826c"
+      )
+    , ( "Alan Turing"
+      , 0xf8b8af8ce3c7cca5e300d33939540c10d45ce001b8f252bfbc57ba0342904181
+      , "7063ae83e7f62bbb171798131b4a0564b956930092b33b07b395615d9ec7e15c58dfcc1e00a35e1572f366ffe34ba0fc47db1e7189759b9fb233c5b05ab388ea"
+      )
+    ]
+
+testDetSigning (msg,prv,bs) = do
+    assertBool "RFC 6979 Vector" $ res == (fromJust $ hexToBS $ stringToBS bs)
+    where (Signature r s) = detSignMsg msg' prv'
+          msg' = hash256 $ stringToBS msg
+          prv' = fromJust $ makePrvKey prv
+          res = runPut' $ put (fromIntegral r :: Hash256) >> 
+                          put (fromIntegral s :: Hash256)
 
 
