@@ -65,6 +65,13 @@ tests =
         , testCase "RFC 6979 Test Vector 3" (testDetSigning $ detVec !! 2)
         , testCase "RFC 6979 Test Vector 4" (testDetSigning $ detVec !! 3)
         , testCase "RFC 6979 Test Vector 5" (testDetSigning $ detVec !! 4)
+        , testCase "RFC 6979 Test Vector 6" (testDetSigning $ detVec !! 5)
+        , testCase "RFC 6979 Test Vector 7" (testDetSigning $ detVec !! 6)
+        , testCase "RFC 6979 Test Vector 8" (testDetSigning $ detVec !! 7)
+        , testCase "RFC 6979 Test Vector 9" (testDetSigning $ detVec !! 8)
+        , testCase "RFC 6979 Test Vector 10" (testDetSigning $ detVec !! 9)
+        , testCase "RFC 6979 Test Vector 11" (testDetSigning $ detVec !! 10)
+        , testCase "RFC 6979 Test Vector 12" (testDetSigning $ detVec !! 11)
         ] 
     ]
 
@@ -174,11 +181,40 @@ detVec =
       , "There is a computer disease that anybody who works with computers knows about. It's a very serious disease and it interferes completely with the work. The trouble with computers is that you 'play' with them!"
       , "b552edd27580141f3b2a5463048cb7cd3e047b97c9f98076c32dbdf85a68718b279fa72dd19bfae05577e06c7c0c1900c371fcd5893f7e1d56a37d30174671f6"
       )
+    , ( 0x0000000000000000000000000000000000000000000000000000000000000001
+      , "Everything should be made as simple as possible, but not simpler."
+      , "33a69cd2065432a30f3d1ce4eb0d59b8ab58c74f27c41a7fdb5696ad4e6108c96f807982866f785d3f6418d24163ddae117b7db4d5fdf0071de069fa54342262"
+      )
+    , ( 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
+      , "Equations are more important to me, because politics is for the present, but an equation is something for eternity."
+      , "54c4a33c6423d689378f160a7ff8b61330444abb58fb470f96ea16d99d4a2fed07082304410efa6b2943111b6a4e0aaa7b7db55a07e9861d1fb3cb1f421044a5"
+      )
+    , ( 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140
+      , "Not only is the Universe stranger than we think, it is stranger than we can think."
+      , "ff466a9f1b7b273e2f4c3ffe032eb2e814121ed18ef84665d0f515360dab3dd06fc95f5132e5ecfdc8e5e6e616cc77151455d46ed48f5589b7db7771a332b283"
+      )
+    , ( 0x0000000000000000000000000000000000000000000000000000000000000001
+      , "How wonderful that we have met with a paradox. Now we have some hope of making progress."
+      , "c0dafec8251f1d5010289d210232220b03202cba34ec11fec58b3e93a85b91d375afdc06b7d6322a590955bf264e7aaa155847f614d80078a90292fe205064d3"
+      )
+    , ( 0x69ec59eaa1f4f2e36b639716b7c30ca86d9a5375c7b38d8918bd9c0ebc80ba64
+      , "Computer science is no more about computers than astronomy is about telescopes."
+      , "7186363571d65e084e7f02b0b77c3ec44fb1b257dee26274c38c928986fea45d0de0b38e06807e46bda1f1e293f4f6323e854c86d58abdd00c46c16441085df6"
+      )
+    , ( 0x00000000000000000000000000007246174ab1e92e9149c6e446fe194d072637
+      , "...if you aren't, at any given time, scandalized by code you wrote five or even three years ago, you're not learning anywhere near enough"
+      , "fbfe5076a15860ba8ed00e75e9bd22e05d230f02a936b653eb55b61c99dda4870e68880ebb0050fe4312b1b1eb0899e1b82da89baa5b895f612619edf34cbd37"
+      )
+    , ( 0x000000000000000000000000000000000000000000056916d0f9b31dc9b637f3
+      , "The question of whether computers can think is like the question of whether submarines can swim."
+      , "cde1302d83f8dd835d89aef803c74a119f561fbaef3eb9129e45f30de86abbf906ce643f5049ee1f27890467b77a6a8e11ec4661cc38cd8badf90115fbd03cef"
+      )
     ]
 
 testDetSigning (prv,msg,bs) = do
     assertBool "RFC 6979 Vector" $ res == (fromJust $ hexToBS $ stringToBS bs)
-    where (Signature r s) = detSignMsg msg' prv'
+    assertBool "Valid sig" $ verifySig msg' sig (derivePubKey prv')
+    where sig@(Signature r s) = detSignMsg msg' prv'
           msg' = hash256 $ stringToBS msg
           prv' = fromJust $ makePrvKey prv
           res = runPut' $ put (fromIntegral r :: Hash256) >> 
