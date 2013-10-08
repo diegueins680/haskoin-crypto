@@ -110,7 +110,7 @@ withSource f m = do
     let ws = hmacDRBGNew seed nonce (stringToBS "/haskoin:0.1.1/")
     S.evalStateT m (ws,f)
 
--- Prime subkey derivation function (from BIP32) with 32 bit counter
+-- Generate next secret through HMAC DRBG
 nextSecret :: MonadIO m => SecretT m FieldN
 nextSecret = do
     (ws,f) <- S.get
