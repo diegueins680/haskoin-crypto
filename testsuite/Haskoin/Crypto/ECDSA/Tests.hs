@@ -51,7 +51,8 @@ signAndVerifyD msg (TestPrvKeyC k) = verifySig msg (detSignMsg msg k) p
     where p = derivePubKey k
            
 halfOrderSig :: Signature -> Bool
-halfOrderSig (Signature _ (Ring s)) = s <= (fromIntegral $ curveN `div` 2)
+halfOrderSig sig@(Signature _ (Ring s)) = 
+    s <= (curveN `div` 2) && isCanonicalHalfOrder sig
 
 {- ECDSA Binary -}
 

@@ -9,6 +9,7 @@ module Haskoin.Crypto.ECDSA
 , unsafeSignMsg
 , verifySig
 , genPrvKey
+, isCanonicalHalfOrder
 ) where
 
 import System.IO
@@ -83,6 +84,10 @@ type Nonce = FieldN
 
 data Signature = Signature { sigR :: !FieldN, sigS :: !FieldN }
     deriving (Show, Eq)
+
+-- Check that 's' component is <= order/2
+isCanonicalHalfOrder :: Signature -> Bool
+isCanonicalHalfOrder (Signature _ s) = s <= maxBound `div` 2
 
 type SecretState m = (WorkingState, (Int -> m BS.ByteString))
 

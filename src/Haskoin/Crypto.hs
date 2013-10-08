@@ -10,6 +10,7 @@ module Haskoin.Crypto
 , detSignMsg
 , verifySig
 , genPrvKey
+, isCanonicalHalfOrder
 
 -- Hash module
 , Hash512
