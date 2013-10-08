@@ -23,7 +23,7 @@ import qualified Control.Monad.State as S
     )
 
 import Data.Word (Word32)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Bits (testBit)
 import Data.Binary (Binary, get, put)
 import Data.Binary.Put (putWord8, putByteString, runPut)
@@ -141,8 +141,8 @@ genKeyPair = do
 -- SecretT monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
 signMsg :: MonadIO m => Hash256 -> PrvKey -> SecretT m Signature
-signMsg _ (PrvKey  0) = error "Integer 0 is an invalid private key"
-signMsg _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
+signMsg _ (PrvKey  0) = error "signMsg: Invalid private key 0"
+signMsg _ (PrvKeyU 0) = error "signMsg: Invalid private key 0"
 signMsg h d = do
     -- 4.1.3.1
     (k,p) <- genKeyPair
@@ -154,24 +154,18 @@ signMsg h d = do
 -- RFC 6979 (http://tools.ietf.org/html/rfc6979)
 -- ECDSA deterministic signatures
 detSignMsg :: Hash256 -> PrvKey -> Signature
-detSignMsg _ (PrvKey  0) = error "Integer 0 is an invalid private key"
-detSignMsg _ (PrvKeyU 0) = error "Integer 0 is an invalid private key"
-detSignMsg h d = go ws
-    where ws = hmacDRBGNew d' (encode' h) BS.empty
-          d' = runPut' $ putPrvKey d -- encode to 32 bytes 
-          go ws0 = case hmacDRBGGen ws0 32 BS.empty of
-              (ws1, Just k) -> 
-                  let kI = bsToInteger k
-                      k' = fromIntegral kI
-                      p  = mulPoint k' curveG
-                      d' = runPrvKey d
+detSignMsg _ (PrvKey  0) = error "detSignMsg: Invalid private key 0"
+detSignMsg _ (PrvKeyU 0) = error "detSignMsg: Invalid private key 0"
+detSignMsg h d = go $ hmacDRBGNew (runPut' $ putPrvKey d) (encode' h) BS.empty
+    where go ws = case hmacDRBGGen ws 32 BS.empty of
+              (ws', Nothing) -> error "detSignMsg: No suitable K value found"
+              (ws', Just k) -> 
+                  let kI   = bsToInteger k
+                      p    = mulPoint (fromInteger kI) curveG
+                      sigM = unsafeSignMsg h (runPrvKey d) (fromInteger kI,p)
                       in if isIntegerValidKey kI
-                            then case unsafeSignMsg h d' (k',p) of
-                                (Just sig) -> sig
-                                Nothing    -> go ws1
-                            else go ws1
-                   -- If this happens to you, you should be playing the lottery
-              _ -> error $ "Impossible to generate a deterministic signature"
+                             then fromMaybe (go ws') sigM
+                             else go ws'
           
 -- Signs a message by providing the nonce
 -- Re-using the same nonce twice will expose the private keys
@@ -189,8 +183,9 @@ unsafeSignMsg h d (k,p) = do
     let e = toFieldN h
     -- 4.1.3.6
     let s' = (e + r*d)/k
-        -- Only create signatures with even s
-        s  = if even s' then s' else (-s')
+        -- Canonicalize signatures: s <= order/2
+        -- maxBound/2 = (maxBound+1)/2 = order/2 (because order is odd)
+        s  = if s' > (maxBound `div` 2) then (-s') else s'
     guard (s /= 0)
     -- 4.1.3.7
     return $ Signature r s

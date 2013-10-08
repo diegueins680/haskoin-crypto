@@ -28,7 +28,7 @@ tests =
     [ testGroup "ECDSA signatures"
         [ testProperty "verify( sign(msg) ) = True" signAndVerify
         , testProperty "verify( detSign(msg) ) = True" signAndVerifyD
-        , testProperty "S component of a signature is even" evenSig
+        , testProperty "S component <= order/2" halfOrderSig
         ],
       testGroup "ECDSA Binary"
         [ testProperty "get( put(Sig) ) = Sig" getPutSig
@@ -50,8 +50,8 @@ signAndVerifyD :: Hash256 -> TestPrvKeyC -> Bool
 signAndVerifyD msg (TestPrvKeyC k) = verifySig msg (detSignMsg msg k) p
     where p = derivePubKey k
            
-evenSig :: Signature -> Bool
-evenSig (Signature _ (Ring s)) = s `mod` 2 == 0
+halfOrderSig :: Signature -> Bool
+halfOrderSig (Signature _ (Ring s)) = s <= (fromIntegral $ curveN `div` 2)
 
 {- ECDSA Binary -}
 
@@ -95,9 +95,7 @@ testIsCanonical sig@(Signature r s) = not $
     (  slen > 1
     && BS.index s (fromIntegral rlen+6) == 0 
     && not (testBit (BS.index s (fromIntegral rlen+7)) 7)
-    ) ||
-    -- Non-canonical signature: S value odd
-    (testBit (BS.index s (fromIntegral $ rlen+slen+5)) 0)
+    ) 
     where s = encode' sig
           len = fromIntegral $ BS.length s
           rlen = BS.index s 3
