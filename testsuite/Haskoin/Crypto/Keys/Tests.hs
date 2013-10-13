@@ -79,7 +79,7 @@ makeToKeyU i = i /= 0 ==>
     where makeKey = fromJust . makePrvKeyU
 
 decodePubKey :: BS.ByteString -> Bool
-decodePubKey bs = decodeEither bs True isValidPubKey
+decodePubKey bs = fromDecode bs True isValidPubKey
 
 {- Key formats -}
 

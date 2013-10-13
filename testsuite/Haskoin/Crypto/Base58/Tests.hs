@@ -30,14 +30,11 @@ tests =
     ]
 
 decodeEncode58 :: BS.ByteString -> Bool
-decodeEncode58 bs = case decodeBase58 (encodeBase58 bs) of
-    (Just r) -> r == bs
-    Nothing  -> False
+decodeEncode58 bs = (fromJust $ decodeBase58 $ encodeBase58 bs) == bs
 
 decodeEncode58Check :: BS.ByteString -> Bool
-decodeEncode58Check bs = case decodeBase58Check (encodeBase58Check bs) of
-    (Just r) -> r == bs
-    Nothing  -> False
+decodeEncode58Check bs = 
+    (fromJust $ decodeBase58Check $ encodeBase58Check bs) == bs
 
 binAddr58 :: Address -> Bool
 binAddr58 a = (fromJust $ base58ToAddr $ addrToBase58 a) == a
