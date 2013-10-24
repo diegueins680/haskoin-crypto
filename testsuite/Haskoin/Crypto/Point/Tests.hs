@@ -37,6 +37,7 @@ tests =
         , testProperty "n*P = P + (n-1)*P" mulPointInduction
         , testProperty "a*P + b*P = (a + b)*P" mulDistributivity
         , testProperty "shamirsTrick = n1*P1 + n2*P2" testShamirsTrick
+        , testProperty "point equality" testPointEqual
         ]
     ]
 
@@ -96,4 +97,14 @@ testShamirsTrick :: FieldN -> Point -> FieldN -> Point -> Bool
 testShamirsTrick n1 p1 n2 p2 = shamirRes == normalRes
     where shamirRes = shamirsTrick n1 p1 n2 p2
           normalRes = addPoint (mulPoint n1 p1) (mulPoint n2 p2)  
+
+testPointEqual :: Point -> Point -> Bool
+testPointEqual p1@InfPoint p2@InfPoint = p1 == p2 
+testPointEqual p1 p2@InfPoint          = p1 /= p2
+testPointEqual p1@InfPoint p2          = p1 /= p2
+testPointEqual p1 p2
+    | x1 == x2 && y1 == y2 = p1 == p2
+    | otherwise            = p1 /= p2
+    where (x1,y1) = fromJust $ getAffine p1
+          (x2,y2) = fromJust $ getAffine p2
 
