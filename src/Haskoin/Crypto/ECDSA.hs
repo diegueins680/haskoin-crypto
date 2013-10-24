@@ -15,7 +15,7 @@ module Haskoin.Crypto.ECDSA
 import System.IO
 
 import Control.Monad (liftM, guard, unless)
-import Control.Monad.Trans (MonadTrans, MonadIO, lift)
+import Control.Monad.Trans (MonadTrans, lift)
 import Control.Applicative (Applicative, (<*>), (<$>), pure)
 import qualified Control.Monad.State as S
     ( StateT
@@ -103,7 +103,7 @@ devRandom :: Int -> IO BS.ByteString
 devRandom i = withBinaryFile "/dev/random" ReadMode $ flip BS.hGet i
 
 -- You have to supply a function that can generate random bits
-withSource :: MonadIO m => (Int -> m BS.ByteString) -> SecretT m a -> m a
+withSource :: Monad m => (Int -> m BS.ByteString) -> SecretT m a -> m a
 withSource f m = do
     seed  <- f 32 -- Read 256 bits from the random source
     nonce <- f 16 -- Read 128 bits from the random source
@@ -111,7 +111,7 @@ withSource f m = do
     S.evalStateT m (ws,f)
 
 -- Generate next secret through HMAC DRBG
-nextSecret :: MonadIO m => SecretT m FieldN
+nextSecret :: Monad m => SecretT m FieldN
 nextSecret = do
     (ws,f) <- S.get
     let (ws',randM) = hmacDRBGGen ws 32 (stringToBS "/haskoin:0.1.1/")
@@ -128,12 +128,12 @@ nextSecret = do
             S.put (ws0,f)
             nextSecret
 
-genPrvKey :: MonadIO m => SecretT m PrvKey
+genPrvKey :: Monad m => SecretT m PrvKey
 genPrvKey = liftM (fromJust . makePrvKey . toInteger) nextSecret
         
 -- Build a private/public key pair from the SecretT monad
 -- Section 3.2.1 http://www.secg.org/download/aid-780/sec1-v2.pdf
-genKeyPair :: MonadIO m => SecretT m (FieldN, Point)
+genKeyPair :: Monad m => SecretT m (FieldN, Point)
 genKeyPair = do
     -- 3.2.1.1 
     d <- nextSecret
@@ -145,7 +145,7 @@ genKeyPair = do
 -- Safely sign a message inside the SecretT monad
 -- SecretT monad will generate a new nonce for each signature
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-signMsg :: MonadIO m => Hash256 -> PrvKey -> SecretT m Signature
+signMsg :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 signMsg _ (PrvKey  0) = error "signMsg: Invalid private key 0"
 signMsg _ (PrvKeyU 0) = error "signMsg: Invalid private key 0"
 signMsg h d = do
