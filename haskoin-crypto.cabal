@@ -29,9 +29,10 @@ library
                        mtl == 2.1.*, 
                        binary == 0.7.*, 
                        bytestring == 0.10.*, 
-                       cryptohash == 0.9.*,
+                       byteable == 0.1.*,
+                       cryptohash == 0.11.*,
                        haskoin-util == 0.1.*,
-                       QuickCheck == 2.5.*
+                       QuickCheck == 2.6.*
     hs-source-dirs:    src
     ghc-options:       -O2
 
@@ -43,9 +44,10 @@ Test-Suite test-haskoin-crypto
                        mtl == 2.1.*, 
                        binary == 0.7.*, 
                        bytestring == 0.10.*, 
-                       cryptohash == 0.9.*,
+                       byteable == 0.1.*,
+                       cryptohash == 0.11.*,
                        haskoin-util == 0.1.*,
-                       QuickCheck == 2.5.*, 
+                       QuickCheck == 2.6.*, 
                        test-framework == 0.8.*, 
                        test-framework-quickcheck2 == 0.3.*, 
                        test-framework-hunit == 0.3.*, 
@@ -61,7 +63,8 @@ Benchmark bench-haskoin-crypto
                        mtl == 2.1.*, 
                        binary == 0.7.*, 
                        bytestring == 0.10.*, 
-                       cryptohash == 0.9.*,
+                       byteable == 0.1.*,
+                       cryptohash == 0.11.*,
                        haskoin-util == 0.1.*,
                        time == 1.4.*,
                        random == 1.0.*

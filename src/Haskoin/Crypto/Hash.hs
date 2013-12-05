@@ -30,9 +30,9 @@ import Crypto.Hash
     , SHA256
     , RIPEMD160
     , hash
-    , digestToByteString
     )
 import Crypto.MAC.HMAC (hmac)
+import Data.Byteable (toBytes)
 import Data.Binary.Get (runGet)
 import Data.Binary (Binary, get, put)
 import Data.Bits (shiftL, shiftR)
@@ -66,13 +66,13 @@ instance Binary CheckSum32 where
     put (CheckSum32 w) = put w
 
 run512 :: BS.ByteString -> BS.ByteString
-run512 = (digestToByteString :: Digest SHA512 -> BS.ByteString) . hash
+run512 = (toBytes :: Digest SHA512 -> BS.ByteString) . hash
 
 run256 :: BS.ByteString -> BS.ByteString
-run256 = (digestToByteString :: Digest SHA256 -> BS.ByteString) . hash
+run256 = (toBytes :: Digest SHA256 -> BS.ByteString) . hash
 
 run160 :: BS.ByteString -> BS.ByteString
-run160 = (digestToByteString :: Digest RIPEMD160 -> BS.ByteString) . hash
+run160 = (toBytes :: Digest RIPEMD160 -> BS.ByteString) . hash
 
 hash512 :: BS.ByteString -> Hash512
 hash512 bs = runGet' get (run512 bs)
