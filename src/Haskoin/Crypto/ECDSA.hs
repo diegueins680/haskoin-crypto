@@ -77,7 +77,6 @@ import Haskoin.Crypto.Ring
     , toMod256
     , inverseN
     , isIntegerValidKey
-    , curveN
     )
 
 type Nonce = FieldN

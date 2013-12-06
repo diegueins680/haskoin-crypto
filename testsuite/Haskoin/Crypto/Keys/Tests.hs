@@ -18,6 +18,7 @@ import Haskoin.Crypto.Arbitrary
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Point
 import Haskoin.Crypto.Ring
+import Haskoin.Crypto.Curve
 import Haskoin.Util
 
 tests :: [Test]
@@ -31,6 +32,7 @@ tests =
         ],
       testGroup "Key formats"
         [ testProperty "fromWIF( toWIF(i) ) = i" fromToWIF
+        , testProperty "fromTestWIF( toTestWIF(i) ) = i" fromToTestWIF
         , testProperty "get( put(PrvKey) )" getPutPrv
         ],
       testGroup "Key compression"
@@ -85,6 +87,9 @@ decodePubKey bs = fromDecode bs True isValidPubKey
 
 fromToWIF :: PrvKey -> Bool
 fromToWIF pk = pk == (fromJust $ fromWIF $ toWIF pk)
+
+fromToTestWIF :: PrvKey -> Bool
+fromToTestWIF pk = pk == (fromJust $ fromTestWIF $ toTestWIF pk)
 
 getPutPrv :: PrvKey -> Bool
 getPutPrv k@(PrvKey  i) = k == runGet getPrvKey  (runPut $ putPrvKey k)

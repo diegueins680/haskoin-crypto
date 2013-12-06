@@ -49,6 +49,8 @@ module Haskoin.Crypto
 , getPrvKeyU
 , fromWIF
 , toWIF
+, fromTestWIF
+, toTestWIF
 
 -- Base58 module
 , Address(..)

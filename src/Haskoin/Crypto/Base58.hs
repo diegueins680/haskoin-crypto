@@ -96,20 +96,26 @@ decodeBase58Check bs = do
     guard $ chk == (encode' $ chksum32 res)
     return res
 
-data Address = PubKeyAddress { runAddress :: Hash160 } |
-               ScriptAddress { runAddress :: Hash160 }
+data Address = PubKeyAddress { runAddress :: Hash160 }
+             | ScriptAddress { runAddress :: Hash160 }
+             | TestPubKeyAddress { runAddress :: Hash160 }
+             | TestScriptAddress { runAddress :: Hash160 }
                deriving (Eq, Show)
 
 addrToBase58 :: Address -> String
 addrToBase58 addr = bsToString $ encodeBase58Check $ case addr of
-    (PubKeyAddress i) -> BS.cons 0 (encode' $ runAddress addr)
-    (ScriptAddress i) -> BS.cons 5 (encode' $ runAddress addr)
+    (PubKeyAddress i)     -> BS.cons 0 (encode' $ runAddress addr)
+    (ScriptAddress i)     -> BS.cons 5 (encode' $ runAddress addr)
+    (TestPubKeyAddress i) -> BS.cons 111 (encode' $ runAddress addr)
+    (TestScriptAddress i) -> BS.cons 196 (encode' $ runAddress addr)
 
 base58ToAddr :: String -> Maybe Address
 base58ToAddr str = do
     val <- decodeBase58Check $ stringToBS str
     case (BS.head val) of
-        0 -> return $ PubKeyAddress $ decode' $ BS.tail val
-        5 -> return $ ScriptAddress $ decode' $ BS.tail val
-        _    -> fail $ "Get: Invalid address version byte"
+        0   -> return $ PubKeyAddress $ decode' $ BS.tail val
+        5   -> return $ ScriptAddress $ decode' $ BS.tail val
+        111 -> return $ TestPubKeyAddress $ decode' $ BS.tail val
+        196 -> return $ TestScriptAddress $ decode' $ BS.tail val
+        _   -> fail $ "Get: Invalid address version byte"
 

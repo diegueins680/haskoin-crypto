@@ -13,6 +13,7 @@ import Haskoin.Crypto.Ring
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Base58
+import Haskoin.Crypto.Curve
 
 data Mod32
 type Test32  = Ring Mod32

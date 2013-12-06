@@ -17,6 +17,7 @@ import Haskoin.Crypto.Ring
 import Haskoin.Crypto.ECDSA
 import Haskoin.Crypto.Keys
 import Haskoin.Crypto.Base58
+import Haskoin.Crypto.Curve
 
 instance RingMod n => Arbitrary (Ring n) where
     arbitrary = fromInteger <$> arbitrary
@@ -49,7 +50,11 @@ instance Arbitrary PubKey where
 instance Arbitrary Address where
     arbitrary = do
         i <- fromInteger <$> choose (1,2^160-1)
-        elements [PubKeyAddress i, ScriptAddress i]
+        elements [ PubKeyAddress i
+                 , ScriptAddress i
+                 , TestPubKeyAddress i
+                 , TestScriptAddress i
+                 ]
 
 instance Arbitrary Signature where
     arbitrary = do

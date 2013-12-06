@@ -21,6 +21,7 @@ import Haskoin.Crypto.Point
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.NumberTheory
 import Haskoin.Crypto.Keys
+import Haskoin.Crypto.Curve
 import Haskoin.Util
 
 tests :: [Test]

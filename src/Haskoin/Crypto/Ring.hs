@@ -8,8 +8,6 @@ module Haskoin.Crypto.Ring
 , FieldN
 , Ring(..)
 , RingMod(..)
-, curveN
-, curveP
 , toFieldN
 , toFieldP
 , toMod512
@@ -54,6 +52,7 @@ import qualified Data.ByteString as BS
     , pack, unpack
     )
 
+import Haskoin.Crypto.Curve (curveP, curveN)
 import Haskoin.Crypto.NumberTheory (mulInverse)
 import Haskoin.Util 
     ( bsToInteger
@@ -73,12 +72,6 @@ data Mod256
 data Mod160
 data ModP
 data ModN
-
-curveP :: Integer
-curveP = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f 
-
-curveN :: Integer
-curveN = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141 
 
 newtype Ring n = Ring { runRing :: Integer }
     deriving (Eq, Ord)

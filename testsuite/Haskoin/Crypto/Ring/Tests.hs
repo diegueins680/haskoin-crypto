@@ -18,6 +18,7 @@ import Haskoin.Crypto.Arbitrary
 
 import Haskoin.Crypto.Ring
 import Haskoin.Crypto.NumberTheory
+import Haskoin.Crypto.Curve
 import Haskoin.Util
 
 tests :: [Test]

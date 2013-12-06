@@ -10,6 +10,7 @@ module Haskoin.Crypto.Point
 , mulPoint
 , shamirsTrick
 , curveB
+, curveA
 ) where
 
 import Data.Maybe (isJust, fromJust)
@@ -18,10 +19,14 @@ import Data.Bits (testBit, shiftR, bitSize)
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad (unless, when)
 
+import Haskoin.Crypto.Curve (integerA, integerB)
 import Haskoin.Crypto.Ring (FieldP, FieldN, quadraticResidue)
 
+curveA :: FieldP
+curveA = fromInteger integerA
+
 curveB :: FieldP
-curveB = fromInteger 0x07
+curveB = fromInteger integerB
 
 {- 
     Elliptic curves of the form y^2 = x^3 + 7 (mod p)
@@ -73,7 +78,7 @@ validatePoint point = case getAffine point of
     -- 3.2.2.1.1 (check that point not equal to InfPoint)
     Nothing    -> False 
     -- 3.2.2.1.2 (check that the point lies on the curve)
-    Just (x,y) -> y ^ (2 :: Int) == x ^ (3 :: Int) + curveB
+    Just (x,y) -> y ^ (2 :: Int) == x ^ (3 :: Int) + (curveA * x) + curveB
 
 isInfPoint :: Point -> Bool
 isInfPoint InfPoint      = True
@@ -81,6 +86,7 @@ isInfPoint (Point _ _ 0) = True
 isInfPoint _             = False
 
 -- Elliptic curve point addition
+-- http://en.wikibooks.org/wiki/Cryptography/Prime_Curve/Jacobian_Coordinates
 addPoint :: Point -> Point -> Point
 addPoint InfPoint point = point
 addPoint point InfPoint = point
@@ -98,18 +104,21 @@ addPoint p1@(Point x1 y1 z1) (Point x2 y2 z2)
           z3 = h * z1 * z2
 
 -- Elliptic curve point doubling 
+-- http://en.wikibooks.org/wiki/Cryptography/Prime_Curve/Jacobian_Coordinates
 doublePoint :: Point -> Point
 doublePoint InfPoint = InfPoint
 doublePoint (Point x y z)
     | y == 0 = InfPoint
     | otherwise = Point x' y' z'
     where s  = 4*x*y ^ (2 :: Int)
-          m  = 3*x ^ (2 :: Int) 
+          m  = 3*x ^ (2 :: Int) + curveA * z ^ (4 :: Int)
           x' = m ^ (2 :: Int) - 2*s
           y' = m*(s - x') - 8*y ^ (4 :: Int)
           z' = 2*y*z
 
 -- Elliptic curve point multiplication
+-- Double and add method (weak to side channel attacks)
+-- http://en.wikipedia.org/wiki/Elliptic_curve_point_multiplication
 mulPoint :: FieldN -> Point -> Point
 mulPoint 0 _        = InfPoint
 mulPoint 1 p        = p

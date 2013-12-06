@@ -17,6 +17,8 @@ module Haskoin.Crypto.Keys
 , getPrvKeyU
 , fromWIF
 , toWIF
+, fromTestWIF
+, toTestWIF
 , curveG
 ) where
 
@@ -35,9 +37,9 @@ import qualified Data.ByteString as BS
     , cons, snoc
     , length
     )
+import Haskoin.Crypto.Curve (pairG, curveN)
 import Haskoin.Crypto.Ring 
     ( FieldN, FieldP
-    , curveN
     , isIntegerValidKey
     , quadraticResidue
     , toMod256
@@ -49,9 +51,9 @@ import Haskoin.Crypto.Point
     , mulPoint 
     , addPoint
     , getAffine
-    , curveB
     , validatePoint
     , isInfPoint
+    , curveA, curveB
     )
 import Haskoin.Crypto.Base58 
     ( Address(..)
@@ -72,9 +74,8 @@ import Haskoin.Util
     )
 
 curveG :: Point
-curveG = fromJust $ makePoint
-        0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798       
-        0X483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 
+curveG = fromJust $ makePoint (fromInteger $ fst pairG) 
+                              (fromInteger $ snd pairG)
 
 {- Public Keys -}
 
@@ -148,7 +149,7 @@ getCompressed e = do
     -- 2.1 
     x <- get :: Get FieldP
     -- 2.4.1 (deriving yP)
-    let a  = x ^ (3 :: Integer) + curveB
+    let a  = x ^ (3 :: Integer) + (curveA * x) + curveB
         ys = filter matchSign (quadraticResidue a)
     -- We found no square root (mod p)
     when (null ys) (fail $ "No ECC point for x = " ++ (show x))
@@ -220,20 +221,35 @@ getPrvKeyU = do
 
 fromWIF :: String -> Maybe PrvKey
 fromWIF str = do
-    b <- decodeBase58Check $ stringToBS str
-    guard (BS.head b == 0x80)  -- Check that this is a private key
-    case BS.length b of
-        33 -> do               -- Uncompressed format
-            let i = bsToInteger (BS.tail b)
-            makePrvKeyU i
-        34 -> do               -- Compressed format
-            guard (BS.last b == 0x01) 
-            let i = bsToInteger $ BS.tail $ BS.init b
-            makePrvKey i
-        _  -> Nothing          -- Bad length
+    bs <- decodeBase58Check $ stringToBS str
+    guard (BS.head bs == 128)  -- Check that this is a prodnet private key
+    decodeWIF bs
+
+fromTestWIF :: String -> Maybe PrvKey
+fromTestWIF str = do
+    bs <- decodeBase58Check $ stringToBS str
+    guard (BS.head bs == 239)  -- Check that this is a testnet private key
+    decodeWIF bs
+
+decodeWIF :: BS.ByteString -> Maybe PrvKey
+decodeWIF bs = case BS.length bs of
+    33 -> do               -- Uncompressed format
+        let i = bsToInteger (BS.tail bs)
+        makePrvKeyU i
+    34 -> do               -- Compressed format
+        guard (BS.last bs == 0x01) 
+        let i = bsToInteger $ BS.tail $ BS.init bs
+        makePrvKey i
+    _  -> Nothing          -- Bad length
 
 toWIF :: PrvKey -> String
-toWIF k = bsToString $ encodeBase58Check $ BS.cons 0x80 enc
+toWIF k = bsToString $ encodeBase58Check $ BS.cons 128 enc
+    where enc | isPrvKeyU k = bs
+              | otherwise   = BS.snoc bs 0x01
+          bs = runPut' $ putPrvKey k
+
+toTestWIF :: PrvKey -> String
+toTestWIF k = bsToString $ encodeBase58Check $ BS.cons 239 enc
     where enc | isPrvKeyU k = bs
               | otherwise   = BS.snoc bs 0x01
           bs = runPut' $ putPrvKey k

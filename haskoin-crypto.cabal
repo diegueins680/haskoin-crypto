@@ -18,6 +18,7 @@ library
     exposed-modules:   Haskoin.Crypto,
                        Haskoin.Crypto.Arbitrary
     other-modules:     Haskoin.Crypto.NumberTheory, 
+                       Haskoin.Crypto.Curve, 
                        Haskoin.Crypto.Hash, 
                        Haskoin.Crypto.Ring,
                        Haskoin.Crypto.Point,
