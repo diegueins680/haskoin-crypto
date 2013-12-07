@@ -9,7 +9,7 @@ module Haskoin.Crypto.Base58
 ) where
 
 import Control.Monad (guard, unless)
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>),(<*>))
 
 import Data.Char (ord)
 import Data.Word (Word8)
@@ -36,7 +36,9 @@ import Haskoin.Util
     , bsToInteger
     , stringToBS
     , bsToString
+    , decodeToMaybe
     )
+import Haskoin.Util.Network
 
 b58String :: String
 b58String = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -98,24 +100,18 @@ decodeBase58Check bs = do
 
 data Address = PubKeyAddress { runAddress :: Hash160 }
              | ScriptAddress { runAddress :: Hash160 }
-             | TestPubKeyAddress { runAddress :: Hash160 }
-             | TestScriptAddress { runAddress :: Hash160 }
-               deriving (Eq, Show)
+                deriving (Eq, Show)
 
 addrToBase58 :: Address -> String
 addrToBase58 addr = bsToString $ encodeBase58Check $ case addr of
-    (PubKeyAddress i)     -> BS.cons 0 (encode' $ runAddress addr)
-    (ScriptAddress i)     -> BS.cons 5 (encode' $ runAddress addr)
-    (TestPubKeyAddress i) -> BS.cons 111 (encode' $ runAddress addr)
-    (TestScriptAddress i) -> BS.cons 196 (encode' $ runAddress addr)
+    (PubKeyAddress i) -> BS.cons addrPrefix (encode' $ runAddress addr)
+    (ScriptAddress i) -> BS.cons scriptPrefix (encode' $ runAddress addr)
 
 base58ToAddr :: String -> Maybe Address
 base58ToAddr str = do
     val <- decodeBase58Check $ stringToBS str
-    case (BS.head val) of
-        0   -> return $ PubKeyAddress $ decode' $ BS.tail val
-        5   -> return $ ScriptAddress $ decode' $ BS.tail val
-        111 -> return $ TestPubKeyAddress $ decode' $ BS.tail val
-        196 -> return $ TestScriptAddress $ decode' $ BS.tail val
-        _   -> fail $ "Get: Invalid address version byte"
+    let f | BS.head val == addrPrefix   = Just PubKeyAddress
+          | BS.head val == scriptPrefix = Just ScriptAddress
+          | otherwise = Nothing
+    f <*> decodeToMaybe (BS.tail val)
 

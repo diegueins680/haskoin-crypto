@@ -52,8 +52,6 @@ instance Arbitrary Address where
         i <- fromInteger <$> choose (1,2^160-1)
         elements [ PubKeyAddress i
                  , ScriptAddress i
-                 , TestPubKeyAddress i
-                 , TestScriptAddress i
                  ]
 
 instance Arbitrary Signature where

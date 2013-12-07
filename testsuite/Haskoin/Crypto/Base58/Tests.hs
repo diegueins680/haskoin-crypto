@@ -25,7 +25,7 @@ tests =
     [ testGroup "Address and Base58"
         [ testProperty "decode58( encode58(i) ) = i" decodeEncode58
         , testProperty "decode58Chk( encode58Chk(i) ) = i" decodeEncode58Check
-        , testProperty "decode58( encode58(address) ) = address" binAddr58
+        , testProperty "decode58( encode58(address) ) = address" decEncAddr
         ]
     ]
 
@@ -36,6 +36,6 @@ decodeEncode58Check :: BS.ByteString -> Bool
 decodeEncode58Check bs = 
     (fromJust $ decodeBase58Check $ encodeBase58Check bs) == bs
 
-binAddr58 :: Address -> Bool
-binAddr58 a = (fromJust $ base58ToAddr $ addrToBase58 a) == a
+decEncAddr :: Address -> Bool
+decEncAddr a = (fromJust $ base58ToAddr $ addrToBase58 a) == a
 

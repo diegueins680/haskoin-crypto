@@ -17,8 +17,6 @@ module Haskoin.Crypto.Keys
 , getPrvKeyU
 , fromWIF
 , toWIF
-, fromTestWIF
-, toTestWIF
 , curveG
 ) where
 
@@ -72,6 +70,7 @@ import Haskoin.Util
     , stringToBS
     , bsToString
     )
+import Haskoin.Util.Network
 
 curveG :: Point
 curveG = fromJust $ makePoint (fromInteger $ fst pairG) 
@@ -222,34 +221,20 @@ getPrvKeyU = do
 fromWIF :: String -> Maybe PrvKey
 fromWIF str = do
     bs <- decodeBase58Check $ stringToBS str
-    guard (BS.head bs == 128)  -- Check that this is a prodnet private key
-    decodeWIF bs
-
-fromTestWIF :: String -> Maybe PrvKey
-fromTestWIF str = do
-    bs <- decodeBase58Check $ stringToBS str
-    guard (BS.head bs == 239)  -- Check that this is a testnet private key
-    decodeWIF bs
-
-decodeWIF :: BS.ByteString -> Maybe PrvKey
-decodeWIF bs = case BS.length bs of
-    33 -> do               -- Uncompressed format
-        let i = bsToInteger (BS.tail bs)
-        makePrvKeyU i
-    34 -> do               -- Compressed format
-        guard (BS.last bs == 0x01) 
-        let i = bsToInteger $ BS.tail $ BS.init bs
-        makePrvKey i
-    _  -> Nothing          -- Bad length
+    -- Check that this is a private key
+    guard (BS.head bs == secretPrefix)  
+    case BS.length bs of
+        33 -> do               -- Uncompressed format
+            let i = bsToInteger (BS.tail bs)
+            makePrvKeyU i
+        34 -> do               -- Compressed format
+            guard (BS.last bs == 0x01) 
+            let i = bsToInteger $ BS.tail $ BS.init bs
+            makePrvKey i
+        _  -> Nothing          -- Bad length
 
 toWIF :: PrvKey -> String
-toWIF k = bsToString $ encodeBase58Check $ BS.cons 128 enc
-    where enc | isPrvKeyU k = bs
-              | otherwise   = BS.snoc bs 0x01
-          bs = runPut' $ putPrvKey k
-
-toTestWIF :: PrvKey -> String
-toTestWIF k = bsToString $ encodeBase58Check $ BS.cons 239 enc
+toWIF k = bsToString $ encodeBase58Check $ BS.cons secretPrefix enc
     where enc | isPrvKeyU k = bs
               | otherwise   = BS.snoc bs 0x01
           bs = runPut' $ putPrvKey k
