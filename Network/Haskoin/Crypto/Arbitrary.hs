@@ -1,3 +1,6 @@
+{-| 
+  QuickCheck Arbitrary instances for Haskoin.Crypto types.
+-}
 module Network.Haskoin.Crypto.Arbitrary 
 ( genPrvKeyC
 , genPrvKeyU
@@ -31,11 +34,13 @@ instance Arbitrary Point where
         , (9, (flip mulPoint $ curveG) <$> (arbitrary :: Gen FieldN))
         ]
 
+-- | Generate an arbitrary compressed private key
 genPrvKeyC :: Gen PrvKey
 genPrvKeyC = do
     i <- fromInteger <$> choose (1, curveN-1)
     return $ fromJust $ makePrvKey i
 
+-- | Generate an arbitrary uncompressed private key
 genPrvKeyU :: Gen PrvKey
 genPrvKeyU = do
     i <- fromInteger <$> choose (1, curveN-1)

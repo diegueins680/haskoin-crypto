@@ -133,24 +133,25 @@ instance Binary PubKey where
 
     -- Section 2.3.4 http://www.secg.org/download/aid-780/sec1-v2.pdf
     get = go =<< getWord8
-              -- skip 2.3.4.1 and fail. InfPoint is an invalid public key
-        where go 0 = fail "InfPoint is not a valid public key"
-              -- 2.3.4.3 Uncompressed format
-              go 4 = getUncompressed
-              -- 2.3.4.2 Compressed format
-              -- 2 means pY is even, 3 means pY is odd
-              go y | y == 2 || y == 3 = getCompressed (even y)
-                   | otherwise = fail "Get: Invalid public key encoding"
+      where 
+        -- skip 2.3.4.1 and fail. InfPoint is an invalid public key
+        go 0 = fail "InfPoint is not a valid public key"
+        -- 2.3.4.3 Uncompressed format
+        go 4 = getUncompressed
+        -- 2.3.4.2 Compressed format
+        -- 2 means pY is even, 3 means pY is odd
+        go y | y == 2 || y == 3 = getCompressed (even y)
+             | otherwise = fail "Get: Invalid public key encoding"
 
     -- Section 2.3.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
     put pk = case getAffine (runPubKey pk) of
         -- 2.3.3.1
-        Nothing -> putWord8 0x00
-        (Just (x,y)) -> case pk of
+        Nothing    -> putWord8 0x00
+        Just (x,y) -> case pk of
             -- Compressed
-            (PubKey  p) -> putWord8 (if even y then 2 else 3) >> put x
+            PubKey  p -> putWord8 (if even y then 2 else 3) >> put x
             -- Uncompressed
-            (PubKeyU p) -> putWord8 4 >> put x >> put y
+            PubKeyU p -> putWord8 4 >> put x >> put y
 
 getUncompressed :: Get PubKey
 getUncompressed = do
@@ -171,7 +172,8 @@ getCompressed e = do
     -- Additionally, check that the point is on the curve
     unless (isJust p) (fail "Get: Point not on the curve")
     return $ PubKey $ fromJust $ p
-    where matchSign a = (even a) == e
+  where 
+    matchSign a = (even a) == e
 
 -- | Computes an Address value from a public key
 pubKeyAddr :: PubKey -> Address
@@ -280,7 +282,8 @@ fromWIF str = do
 -- | Encodes a private key into WIF format
 toWIF :: PrvKey -> String
 toWIF k = bsToString $ encodeBase58Check $ BS.cons secretPrefix enc
-    where enc | isPrvKeyU k = bs
-              | otherwise   = BS.snoc bs 0x01
-          bs = runPut' $ putPrvKey k
+  where 
+    enc | isPrvKeyU k = bs
+        | otherwise   = BS.snoc bs 0x01
+    bs = runPut' $ putPrvKey k
 

@@ -1,3 +1,4 @@
+-- | ECDSA Signatures
 module Network.Haskoin.Crypto.ECDSA
 ( SecretT
 , Signature(..)
@@ -81,27 +82,16 @@ import Network.Haskoin.Crypto.Ring
 
 type Nonce = FieldN
 
-data Signature = Signature { sigR :: !FieldN, sigS :: !FieldN }
-    deriving (Show, Eq)
-
--- Check that 's' component is <= order/2
-isCanonicalHalfOrder :: Signature -> Bool
-isCanonicalHalfOrder (Signature _ s) = s <= maxBound `div` 2
-
+-- | Internal state of the 'SecretT' monad
 type SecretState m = (WorkingState, (Int -> m BS.ByteString))
 
--- HMAC DRBG with SHA-256
+-- | StateT monad stack tracking the internal state of HMAC DRBG 
+-- pseudo random number generator using SHA-256. The 'SecretT' monad is
+-- run with the 'withSource' function by providing it a source of entropy.
 type SecretT m a = S.StateT (SecretState m) m a
 
--- /dev/urandom on machines that support it
-devURandom :: Int -> IO BS.ByteString
-devURandom i = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet i
-
--- /dev/random on machines that support it
-devRandom :: Int -> IO BS.ByteString
-devRandom i = withBinaryFile "/dev/random" ReadMode $ flip BS.hGet i
-
--- You have to supply a function that can generate random bits
+-- | Run a 'SecretT' monad by providing it a source of entropy. You can
+-- use 'devURandom', 'devRandom' or provide your own entropy source function.
 withSource :: Monad m => (Int -> m BS.ByteString) -> SecretT m a -> m a
 withSource f m = do
     seed  <- f 32 -- Read 256 bits from the random source
@@ -109,7 +99,19 @@ withSource f m = do
     let ws = hmacDRBGNew seed nonce (stringToBS "/haskoin:0.1.1/")
     S.evalStateT m (ws,f)
 
--- Generate next secret through HMAC DRBG
+-- | \/dev\/urandom entropy source. This is only available on machines
+-- supporting it. This function is meant to be used together with 'withSource'.
+devURandom :: Int -> IO BS.ByteString
+devURandom i = withBinaryFile "/dev/urandom" ReadMode $ flip BS.hGet i
+
+-- | \/dev\/random entropy source. This is only available on machines
+-- supporting it. This function is meant to be used together with 'withSource'.
+devRandom :: Int -> IO BS.ByteString
+devRandom i = withBinaryFile "/dev/random" ReadMode $ flip BS.hGet i
+
+-- | Generate a new random 'FieldN' value from the 'SecretT' monad. This will
+-- invoke the HMAC DRBG routine. Of the internal entropy pool of the HMAC DRBG
+-- was stretched too much, this function will reseed it.
 nextSecret :: Monad m => SecretT m FieldN
 nextSecret = do
     (ws,f) <- S.get
@@ -127,11 +129,12 @@ nextSecret = do
             S.put (ws0,f)
             nextSecret
 
+-- | Produce a new 'PrvKey' randomly from the 'SecretT' monad.
 genPrvKey :: Monad m => SecretT m PrvKey
 genPrvKey = liftM (fromJust . makePrvKey . toInteger) nextSecret
         
--- Build a private/public key pair from the SecretT monad
 -- Section 3.2.1 http://www.secg.org/download/aid-780/sec1-v2.pdf
+-- Produce a new private/public key pair from the 'SecretT' monad.
 genKeyPair :: Monad m => SecretT m (FieldN, Point)
 genKeyPair = do
     -- 3.2.1.1 
@@ -141,9 +144,16 @@ genKeyPair = do
     -- 3.2.1.3
     return (d,q)
 
--- Safely sign a message inside the SecretT monad
--- SecretT monad will generate a new nonce for each signature
+-- | Data type representing an ECDSA signature. 
+data Signature = 
+    Signature { sigR :: !FieldN 
+              , sigS :: !FieldN 
+              }
+    deriving (Show, Eq)
+
 -- Section 4.1.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
+-- | Safely sign a message inside the 'SecretT' monad. The 'SecretT' monad will
+-- generate a new nonce for each signature.
 signMsg :: Monad m => Hash256 -> PrvKey -> SecretT m Signature
 signMsg _ (PrvKey  0) = error "signMsg: Invalid private key 0"
 signMsg _ (PrvKeyU 0) = error "signMsg: Invalid private key 0"
@@ -155,21 +165,22 @@ signMsg h d = do
         -- If signing failed, retry with a new nonce
         Nothing    -> signMsg h d
 
--- RFC 6979 (http://tools.ietf.org/html/rfc6979)
--- ECDSA deterministic signatures
+-- | Sign a message using ECDSA deterministic signatures as defined by
+-- RFC 6979 <http://tools.ietf.org/html/rfc6979>
 detSignMsg :: Hash256 -> PrvKey -> Signature
 detSignMsg _ (PrvKey  0) = error "detSignMsg: Invalid private key 0"
 detSignMsg _ (PrvKeyU 0) = error "detSignMsg: Invalid private key 0"
 detSignMsg h d = go $ hmacDRBGNew (runPut' $ putPrvKey d) (encode' h) BS.empty
-    where go ws = case hmacDRBGGen ws 32 BS.empty of
-              (ws', Nothing) -> error "detSignMsg: No suitable K value found"
-              (ws', Just k) -> 
-                  let kI   = bsToInteger k
-                      p    = mulPoint (fromInteger kI) curveG
-                      sigM = unsafeSignMsg h (runPrvKey d) (fromInteger kI,p)
-                      in if isIntegerValidKey kI
-                             then fromMaybe (go ws') sigM
-                             else go ws'
+  where 
+    go ws = case hmacDRBGGen ws 32 BS.empty of
+        (ws', Nothing) -> error "detSignMsg: No suitable K value found"
+        (ws', Just k) -> 
+            let kI   = bsToInteger k
+                p    = mulPoint (fromInteger kI) curveG
+                sigM = unsafeSignMsg h (runPrvKey d) (fromInteger kI,p)
+                in if isIntegerValidKey kI
+                       then fromMaybe (go ws') sigM
+                       else go ws'
           
 -- Signs a message by providing the nonce
 -- Re-using the same nonce twice will expose the private keys
@@ -195,24 +206,29 @@ unsafeSignMsg h d (k,p) = do
     return $ Signature r s
 
 -- Section 4.1.4 http://www.secg.org/download/aid-780/sec1-v2.pdf
+-- | Verify an ECDSA signature
 verifySig :: Hash256 -> Signature -> PubKey -> Bool
 -- 4.1.4.1 (r and s can not be zero)
 verifySig _ (Signature 0 _) _ = False
 verifySig _ (Signature _ 0) _ = False
-verifySig h (Signature r s) q = 
-    case getAffine p of
-        Nothing      -> False
-        -- 4.1.4.7 / 4.1.4.8
-        (Just (x,_)) -> (toFieldN x) == r
-    where 
-        -- 4.1.4.2 / 4.1.4.3
-        e  = toFieldN h
-        -- 4.1.4.4
-        s' = inverseN s
-        u1 = e*s'
-        u2 = r*s'
-        -- 4.1.4.5 (u1*G + u2*q)
-        p  = shamirsTrick u1 curveG u2 (runPubKey q)
+verifySig h (Signature r s) q = case getAffine p of
+    Nothing      -> False
+    -- 4.1.4.7 / 4.1.4.8
+    (Just (x,_)) -> (toFieldN x) == r
+  where 
+    -- 4.1.4.2 / 4.1.4.3
+    e  = toFieldN h
+    -- 4.1.4.4
+    s' = inverseN s
+    u1 = e*s'
+    u2 = r*s'
+    -- 4.1.4.5 (u1*G + u2*q)
+    p  = shamirsTrick u1 curveG u2 (runPubKey q)
+
+-- | Returns True if the S component of a Signature is <= order/2.
+-- Signatures need to pass this test to be canonical.
+isCanonicalHalfOrder :: Signature -> Bool
+isCanonicalHalfOrder (Signature _ s) = s <= maxBound `div` 2
 
 instance Binary Signature where
     get = do
@@ -234,4 +250,5 @@ instance Binary Signature where
         let c = runPut' $ put r >> put s
         putWord8 (fromIntegral $ BS.length c)
         putByteString c
+
 

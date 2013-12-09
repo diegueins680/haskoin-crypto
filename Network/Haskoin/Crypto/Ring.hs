@@ -61,10 +61,18 @@ import Network.Haskoin.Util
     , bsToString
     )
 
+-- | Data type representing a 512 bit unsigned integer.
+-- It is implemented as an Integer modulo 2^512.
 type Hash512 = Ring Mod512
+-- | Data type representing a 256 bit unsigned integer.
+-- It is implemented as an Integer modulo 2^256.
 type Hash256 = Ring Mod256
+-- | Data type representing a 160 bit unsigned integer.
+-- It is implemented as an Integer modulo 2^160.
 type Hash160 = Ring Mod160
+-- | Data type representing an Integer modulo coordinate field order P.
 type FieldP  = Ring ModP
+-- | Data type representing an Integer modulo curve order N. 
 type FieldN  = Ring ModN
 
 data Mod512
@@ -162,11 +170,12 @@ instance RingMod n => Enum (Ring n) where
         | toInteger i >= toInteger (minFrom r) && 
           toInteger i <= toInteger (maxFrom r) = r
         | otherwise = error "Ring: toEnum is outside of bounds"
-        where r = fromInteger $ toEnum i
-              minFrom :: RingMod a => Ring a -> Ring a
-              minFrom _ = minBound
-              maxFrom :: RingMod a => Ring a -> Ring a
-              maxFrom _ = maxBound
+      where 
+        r = fromInteger $ toEnum i
+        minFrom :: RingMod a => Ring a -> Ring a
+        minFrom _ = minBound
+        maxFrom :: RingMod a => Ring a -> Ring a
+        maxFrom _ = maxBound
     fromEnum (Ring i) = fromEnum i
 
 instance RingMod n => Integral (Ring n) where
@@ -175,9 +184,11 @@ instance RingMod n => Integral (Ring n) where
     (Ring i1) `div` (Ring i2) = fromInteger $ i1 `div` i2
     (Ring i1) `mod` (Ring i2) = fromInteger $ i1 `mod` i2
     (Ring i1) `quotRem` (Ring i2) = (fromInteger a, fromInteger b)
-        where (a,b) = i1 `quotRem` i2
+      where 
+        (a,b) = i1 `quotRem` i2
     (Ring i1) `divMod` (Ring i2) = (fromInteger a, fromInteger b)
-        where (a,b) = i1 `divMod` i2
+      where 
+        (a,b) = i1 `divMod` i2
     toInteger (Ring i) = i
 
 {- Fractional is only defined for prime orders -}
@@ -273,8 +284,9 @@ instance Binary (Ring ModP) where
 -- http://en.wikipedia.org/wiki/Quadratic_residue
 quadraticResidue :: FieldP -> [FieldP]
 quadraticResidue x = guard (y^2 == x) >> [y, (-y)]
-    where q = (curveP + 1) `div` 4
-          y = x^q
+  where 
+    q = (curveP + 1) `div` 4
+    y = x^q
 
 isIntegerValidKey :: Integer -> Bool
 isIntegerValidKey i = i > 0 && i < curveN

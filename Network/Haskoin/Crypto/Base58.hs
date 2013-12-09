@@ -60,37 +60,46 @@ encodeBase58I 0 = BS.pack [b58 0]
 encodeBase58I i
     | i >= 0 = go BS.empty i
     | otherwise = error "encodeBase58 is not defined for negative Integers"
-    where go acc 0 = acc
-          go acc n = go (BS.cons (fromIntegral b) acc) q
-              where (q,r) = n `quotRem` 58
-                    b     = b58 $ fromIntegral r
+  where 
+    go acc 0 = acc
+    go acc n = go (BS.cons (fromIntegral b) acc) q
+      where 
+        (q,r) = n `quotRem` 58
+        b     = b58 $ fromIntegral r
 
+-- | Encode a bytestring to a base 58 representation.
 encodeBase58 :: BS.ByteString -> BS.ByteString
 encodeBase58 bs = BS.append l r
-    where (z,b) = BS.span (== 0) bs
-          l     = BS.map b58 z -- preserve leading 0's
-          r | BS.null b = BS.empty
-            | otherwise = encodeBase58I $ bsToInteger b
+  where 
+    (z,b) = BS.span (== 0) bs
+    l = BS.map b58 z -- preserve leading 0's
+    r | BS.null b = BS.empty
+      | otherwise = encodeBase58I $ bsToInteger b
 
--- We return maybe Integer because the ByteString could contain invalid
--- characters like 0,O,l,I
+-- | Decode a base 58 encoded bytestring. This can fail if the input bytestring
+-- contains invalid base 58 characters such as 0,O,l,I
 decodeBase58 :: BS.ByteString -> Maybe BS.ByteString
 decodeBase58 bs = r >>= return . (BS.append prefix)
-    where (z,b)  = BS.span (== (b58 0)) bs
-          prefix = BS.map (fromJust . b58') z -- preserve leading 1's
-          r | BS.null b = Just BS.empty
-            | otherwise = integerToBS <$> foldl f (Just 0) (BS.unpack b)
-          f i w  = do
-              n <- fromIntegral <$> b58' w
-              p <- i
-              return $ p*58 + n
+  where 
+    (z,b)  = BS.span (== (b58 0)) bs
+    prefix = BS.map (fromJust . b58') z -- preserve leading 1's
+    r | BS.null b = Just BS.empty
+      | otherwise = integerToBS <$> foldl f (Just 0) (BS.unpack b)
+    f i w  = do
+        n <- fromIntegral <$> b58' w
+        p <- i
+        return $ p*58 + n
 
+-- | Computes a checksum for the input bytestring and encodes the input and
+-- the checksum to a base 58 representation.
 encodeBase58Check :: BS.ByteString -> BS.ByteString
 encodeBase58Check bs = encodeBase58 $ BS.append bs chk
-    where chk = encode' $ chksum32 bs
+  where 
+    chk = encode' $ chksum32 bs
 
--- decoding fails if the bytestring contains invalid base58 characters
--- or if the checksum doesn't match
+-- | Decode a base 58 encoded bytestring that contains a checksum. This
+-- function returns Nothing if the input bytestring contains invalid base 58
+-- characters or if the checksum fails.
 decodeBase58Check :: BS.ByteString -> Maybe BS.ByteString
 decodeBase58Check bs = do
     rs <- decodeBase58 bs
@@ -98,15 +107,22 @@ decodeBase58Check bs = do
     guard $ chk == (encode' $ chksum32 res)
     return res
 
-data Address = PubKeyAddress { runAddress :: Hash160 }
-             | ScriptAddress { runAddress :: Hash160 }
-                deriving (Eq, Show)
+-- |Data type representing a Bitcoin address
+data Address 
+    -- | Public Key Hash Address
+    = PubKeyAddress { runAddress :: Hash160 }
+    -- | Script Hash Address
+    | ScriptAddress { runAddress :: Hash160 }
+       deriving (Eq, Show)
 
+-- | Transforms an Address into a base58 encoded String
 addrToBase58 :: Address -> String
 addrToBase58 addr = bsToString $ encodeBase58Check $ case addr of
     (PubKeyAddress i) -> BS.cons addrPrefix (encode' $ runAddress addr)
     (ScriptAddress i) -> BS.cons scriptPrefix (encode' $ runAddress addr)
 
+-- | Decodes an Address from a base58 encoded String. This function can fail
+-- if the String is not properly encoded as base58 or the checksum fails.
 base58ToAddr :: String -> Maybe Address
 base58ToAddr str = do
     val <- decodeBase58Check $ stringToBS str
