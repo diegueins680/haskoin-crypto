@@ -7,8 +7,8 @@ import Data.Maybe (fromJust)
 import Data.Binary (encode, decodeOrFail)
 import qualified Data.ByteString as BS
 
-import Haskoin.Crypto
-import Haskoin.Util (bsToInteger)
+import Network.Haskoin.Crypto
+import Network.Haskoin.Util
 
 main :: IO ()
 main = do

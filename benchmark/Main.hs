@@ -10,10 +10,11 @@ import Data.Maybe
 import Data.Time.Clock
 import qualified Data.ByteString as BS
 
-import Haskoin.Crypto.ECDSA
-import Haskoin.Crypto.Keys
-import Haskoin.Crypto.Point
-import Haskoin.Crypto.Ring
+import Network.Haskoin.Crypto.ECDSA
+import Network.Haskoin.Crypto.Keys
+import Network.Haskoin.Crypto.Point
+import Network.Haskoin.Crypto.Ring
+import Network.Haskoin.Crypto.Curve
 
 
 bench :: Int -> String -> IO a -> IO a
