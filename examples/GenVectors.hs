@@ -5,11 +5,12 @@ import Data.Maybe
 import Data.Binary 
 import qualified Data.ByteString as BS
 
-import Haskoin.Crypto.ECDSA
-import Haskoin.Crypto.Keys
-import Haskoin.Crypto.Hash
-import Haskoin.Crypto.Ring
-import Haskoin.Util 
+import Network.Haskoin.Crypto.ECDSA
+import Network.Haskoin.Crypto.Keys
+import Network.Haskoin.Crypto.Hash
+import Network.Haskoin.Crypto.Ring
+import Network.Haskoin.Crypto.Curve
+import Network.Haskoin.Util 
 
 vectors = 
     [
@@ -38,11 +39,11 @@ vectors =
 
 genVector :: (Integer, String) -> (String, String, String, String, String)
 genVector (k,m) = 
-    ( bsToString $ bsToHex $ runPut' $ putPrvKey prv
+    ( bsToHex $ runPut' $ putPrvKey prv
     , toWIF prv
     , m
-    , bsToString $ bsToHex sig1
-    , bsToString $ bsToHex sig2
+    , bsToHex sig1
+    , bsToHex sig2
     )
     where prv = fromJust $ makePrvKey k
           msg = hash256 $ stringToBS m
@@ -53,7 +54,7 @@ genVector (k,m) =
 
 main :: IO ()
 main = do
-    print "Haskoin test vectors for RFC 6979 ECDSA (secp256k1, SHA-256)"
+    print "Network.Haskoin test vectors for RFC 6979 ECDSA (secp256k1, SHA-256)"
     print $ "(PrvKey HEX, PrvKey WIF, message, R || S as HEX, sig as DER)"
     forM_ vectors $ pp . genVector
 
