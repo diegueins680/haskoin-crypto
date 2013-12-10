@@ -1,24 +1,14 @@
 module Network.Haskoin.Crypto.Point.Tests (tests) where
 
-import Test.QuickCheck.Property hiding ((.&.))
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.QuickCheck.Property (Property, (==>))
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Control.Monad.Identity
-import Data.Maybe
-import Data.Word
-import Data.Bits
-import Data.Binary
-import Data.Binary.Get
-import Data.Binary.Put
-import qualified Data.ByteString as BS
+import Data.Maybe (fromJust)
 
-import QuickCheckUtils
-import Network.Haskoin.Crypto.Arbitrary
-
+import Network.Haskoin.Crypto.Arbitrary()
 import Network.Haskoin.Crypto.Point
 import Network.Haskoin.Crypto.Ring
-import Network.Haskoin.Crypto.NumberTheory
 
 tests :: [Test]
 tests = 
@@ -59,7 +49,8 @@ mulOnCurve p1 n = case mulPoint n p1 of
 
 fromToAffine :: Point -> Property
 fromToAffine p = not (isInfPoint p) ==> (fromJust $ makePoint x y) == p
-    where (x,y) = fromJust $ getAffine p
+  where 
+    (x,y) = fromJust $ getAffine p
 
 addInfPoint :: Point -> Bool
 addInfPoint p = addPoint p makeInfPoint == p
@@ -95,8 +86,9 @@ mulDistributivity a b p =
 
 testShamirsTrick :: FieldN -> Point -> FieldN -> Point -> Bool
 testShamirsTrick n1 p1 n2 p2 = shamirRes == normalRes
-    where shamirRes = shamirsTrick n1 p1 n2 p2
-          normalRes = addPoint (mulPoint n1 p1) (mulPoint n2 p2)  
+  where 
+    shamirRes = shamirsTrick n1 p1 n2 p2
+    normalRes = addPoint (mulPoint n1 p1) (mulPoint n2 p2)  
 
 testPointEqual :: Point -> Point -> Bool
 testPointEqual p1@InfPoint p2@InfPoint = p1 == p2 
@@ -105,6 +97,7 @@ testPointEqual p1@InfPoint p2          = p1 /= p2
 testPointEqual p1 p2
     | x1 == x2 && y1 == y2 = p1 == p2
     | otherwise            = p1 /= p2
-    where (x1,y1) = fromJust $ getAffine p1
-          (x2,y2) = fromJust $ getAffine p2
+  where 
+    (x1,y1) = fromJust $ getAffine p1
+    (x2,y2) = fromJust $ getAffine p2
 

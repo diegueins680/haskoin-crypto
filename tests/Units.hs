@@ -1,10 +1,10 @@
 module Units (tests) where
 
-import Test.HUnit
-import Test.Framework
-import Test.Framework.Providers.HUnit
+import Test.HUnit (Assertion, assertBool)
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.HUnit (testCase)
 
-import Control.Monad (replicateM_, liftM2)
+import Control.Monad (replicateM_)
 import Control.Monad.Trans (liftIO)
 
 import Data.Maybe
@@ -13,7 +13,6 @@ import qualified Data.ByteString as BS
 
 import Network.Haskoin.Crypto.Keys
 import Network.Haskoin.Crypto.Ring
-import Network.Haskoin.Crypto.Point
 import Network.Haskoin.Crypto.ECDSA
 import Network.Haskoin.Crypto.Hash
 import Network.Haskoin.Crypto.Base58
@@ -22,29 +21,63 @@ import Network.Haskoin.Util
 -- Unit tests copied from bitcoind implementation
 -- https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp
 
+strSecret1 :: String
 strSecret1  = "5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj"
+
+strSecret2 :: String
 strSecret2  = "5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3"
+
+strSecret1C :: String
 strSecret1C = "Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw"
+
+strSecret2C :: String
 strSecret2C = "L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g"
 
+addr1 :: String 
 addr1  = "1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ"
+
+addr2 :: String 
 addr2  = "1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ"
+
+addr1C :: String
 addr1C = "1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs"
+
+addr2C :: String
 addr2C = "1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs"
 
+strAddressBad :: String
 strAddressBad = "1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF"
 
-sigMsg = [("Very secret message " ++ (show i) ++ ": 11") | i <- [0..15]]
+sigMsg :: [String]
+sigMsg = [ ("Very secret message " ++ (show (i :: Int)) ++ ": 11") 
+         | i <- [0..15]
+         ]
 
+sec1 :: PrvKey
 sec1  = fromJust $ fromWIF strSecret1
+
+sec2 :: PrvKey
 sec2  = fromJust $ fromWIF strSecret2
+
+sec1C :: PrvKey
 sec1C = fromJust $ fromWIF strSecret1C
+
+sec2C :: PrvKey
 sec2C = fromJust $ fromWIF strSecret2C
+
+pub1 :: PubKey
 pub1  = derivePubKey sec1
+
+pub2 :: PubKey
 pub2  = derivePubKey sec2
+
+pub1C :: PubKey
 pub1C = derivePubKey sec1C
+
+pub2C :: PubKey
 pub2C = derivePubKey sec2C
 
+tests :: [Test]
 tests =
     [ testGroup "ECDSA PRNG unit tests"
         [ testCase "signMsg produces unique sigantures" uniqueSigs
@@ -103,33 +136,40 @@ uniqueKeys = do
 
 {- bitcoind /src/test/key_tests.cpp -}
 
+checkPrivkey :: Assertion
 checkPrivkey = do
     assertBool "Key 1"  $ isJust $ fromWIF strSecret1
     assertBool "Key 2"  $ isJust $ fromWIF strSecret2
     assertBool "Key 1C" $ isJust $ fromWIF strSecret1C
     assertBool "Key 2C" $ isJust $ fromWIF strSecret2C
 
+checkInvalidKey :: Assertion
 checkInvalidKey = 
     assertBool "Bad key" $ isNothing $ fromWIF strAddressBad
 
+
+checkPrvKeyCompressed :: Assertion
 checkPrvKeyCompressed = do
     assertBool "Key 1"  $ isPrvKeyU sec1
     assertBool "Key 2"  $ isPrvKeyU sec2
     assertBool "Key 1C" $ not $ isPrvKeyU sec1C
     assertBool "Key 2C" $ not $ isPrvKeyU sec2C
 
+checkKeyCompressed :: Assertion
 checkKeyCompressed = do
     assertBool "Key 1"  $ isPubKeyU pub1
     assertBool "Key 2"  $ isPubKeyU pub2
     assertBool "Key 1C" $ not $ isPubKeyU pub1C
     assertBool "Key 2C" $ not $ isPubKeyU pub2C
 
+checkMatchingAddress :: Assertion
 checkMatchingAddress = do
     assertBool "Key 1"  $ addr1  == (addrToBase58 $ pubKeyAddr pub1)
     assertBool "Key 2"  $ addr2  == (addrToBase58 $ pubKeyAddr pub2)
     assertBool "Key 1C" $ addr1C == (addrToBase58 $ pubKeyAddr pub1C)
     assertBool "Key 2C" $ addr2C == (addrToBase58 $ pubKeyAddr pub2C)
     
+checkSignatures :: Hash256 -> Assertion
 checkSignatures h = do
     (sign1, sign2, sign1C, sign2C) <- liftIO $ withSource devURandom $ do
         a <- signMsg h sec1
@@ -211,6 +251,7 @@ detVec =
       )
     ]
 
+testDetSigning :: (Integer, String, String) -> Assertion
 testDetSigning (prv,msg,str) = do
     assertBool "RFC 6979 Vector" $ res == (fromJust $ hexToBS str)
     assertBool "Valid sig" $ verifySig msg' sig (derivePubKey prv')

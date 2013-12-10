@@ -1,23 +1,14 @@
 module Network.Haskoin.Crypto.Base58.Tests (tests) where
 
-import Test.QuickCheck.Property hiding ((.&.))
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Control.Monad.Identity
-import Data.Maybe
-import Data.Word
-import Data.Bits
-import Data.Binary
-import Data.Binary.Get
-import Data.Binary.Put
-import qualified Data.ByteString as BS
+import Data.Maybe (fromJust)
+import qualified Data.ByteString as BS (ByteString)
 
-import QuickCheckUtils
-import Network.Haskoin.Crypto.Arbitrary
-import Network.Haskoin.Util.Arbitrary
+import Network.Haskoin.Crypto.Arbitrary()
+import Network.Haskoin.Util.Arbitrary()
 
-import Network.Haskoin.Util
 import Network.Haskoin.Crypto.Base58
 
 tests :: [Test]

@@ -1,8 +1,6 @@
 module Main where
 
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-import Test.Framework.Providers.HUnit
+import Test.Framework (defaultMain)
 
 -- Property testing
 import qualified Network.Haskoin.Crypto.Ring.Tests (tests)
@@ -16,6 +14,7 @@ import qualified Network.Haskoin.Crypto.Hash.Tests (tests)
 import qualified Units (tests)
 import qualified Network.Haskoin.Crypto.Hash.Units (tests)
 
+main :: IO ()
 main = defaultMain
     (  Network.Haskoin.Crypto.Ring.Tests.tests 
     ++ Network.Haskoin.Crypto.Point.Tests.tests 

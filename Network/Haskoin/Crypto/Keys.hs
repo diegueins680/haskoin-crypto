@@ -22,15 +22,14 @@ module Network.Haskoin.Crypto.Keys
 
 import Data.Binary (Binary, get, put)
 import Data.Binary.Get (Get, getWord8)
-import Data.Binary.Put (Put, putWord8, runPut)
+import Data.Binary.Put (Put, putWord8)
 
 import Control.Monad (when, unless, guard)
 import Control.Applicative ((<$>),(<*>))
 import Data.Maybe (isJust, fromJust)
 
 import qualified Data.ByteString as BS 
-    ( ByteString
-    , head, tail
+    ( head, tail
     , last, init
     , cons, snoc
     , length
@@ -149,9 +148,9 @@ instance Binary PubKey where
         Nothing    -> putWord8 0x00
         Just (x,y) -> case pk of
             -- Compressed
-            PubKey  p -> putWord8 (if even y then 2 else 3) >> put x
+            PubKey  _ -> putWord8 (if even y then 2 else 3) >> put x
             -- Uncompressed
-            PubKeyU p -> putWord8 4 >> put x >> put y
+            PubKeyU _ -> putWord8 4 >> put x >> put y
 
 getUncompressed :: Get PubKey
 getUncompressed = do

@@ -13,14 +13,11 @@ module Network.Haskoin.Crypto.Point
 , curveA
 ) where
 
-import Data.Maybe (isJust, fromJust)
-
-import Data.Bits (testBit, shiftR, bitSize)
-import Control.Applicative ((<$>), (<*>))
-import Control.Monad (unless, when)
+import Data.Bits (shiftR)
+import Control.Applicative ((<$>))
 
 import Network.Haskoin.Crypto.Curve (integerA, integerB)
-import Network.Haskoin.Crypto.Ring (FieldP, FieldN, quadraticResidue)
+import Network.Haskoin.Crypto.Ring (FieldP, FieldN)
 
 curveA :: FieldP
 curveA = fromInteger integerA

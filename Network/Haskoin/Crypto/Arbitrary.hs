@@ -7,10 +7,9 @@ module Network.Haskoin.Crypto.Arbitrary
 )  where
 
 import Test.QuickCheck
-import Network.Haskoin.Util.Arbitrary
+import Network.Haskoin.Util.Arbitrary()
 
-import Control.Monad.Identity
-import Control.Applicative ((<$>),(<*>))
+import Control.Applicative ((<$>))
 
 import Data.Maybe
 
@@ -54,7 +53,7 @@ instance Arbitrary PubKey where
 
 instance Arbitrary Address where
     arbitrary = do
-        i <- fromInteger <$> choose (1,2^160-1)
+        i <- fromInteger <$> choose (1,2^(160-1 :: Int))
         elements [ PubKeyAddress i
                  , ScriptAddress i
                  ]

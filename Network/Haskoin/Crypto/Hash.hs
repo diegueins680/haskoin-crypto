@@ -36,7 +36,6 @@ import Crypto.Hash
     )
 import Crypto.MAC.HMAC (hmac)
 import Data.Byteable (toBytes)
-import Data.Binary.Get (runGet)
 import Data.Binary (Binary, get, put)
 import Data.Bits (shiftL, shiftR)
 import Control.Applicative ((<$>))
@@ -62,8 +61,7 @@ import Network.Haskoin.Crypto.Ring
     )
 
 -- | Data type representing a 32 bit checksum
-newtype CheckSum32 = CheckSum32 { runCheckSum32 :: Word32 }
-    deriving (Show, Eq)
+newtype CheckSum32 = CheckSum32 Word32 deriving (Show, Eq)
 
 instance Binary CheckSum32 where
     get = CheckSum32 <$> get

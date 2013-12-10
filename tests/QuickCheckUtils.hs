@@ -3,16 +3,10 @@ module QuickCheckUtils where
 
 import Test.QuickCheck
 
-import Control.Applicative ((<$>),(<*>))
+import Control.Applicative ((<$>))
 
-import Data.Maybe
-import qualified Data.ByteString as BS
-
-import Network.Haskoin.Crypto.Point
 import Network.Haskoin.Crypto.Ring
-import Network.Haskoin.Crypto.ECDSA
 import Network.Haskoin.Crypto.Keys
-import Network.Haskoin.Crypto.Base58
 import Network.Haskoin.Crypto.Curve
 
 data Mod32

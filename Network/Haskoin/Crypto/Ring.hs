@@ -33,7 +33,6 @@ import Data.Binary.Get
     , getWord32be
     , getWord8
     , getByteString
-    , runGet
     , Get
     )
 import Data.Binary.Put 
@@ -45,12 +44,7 @@ import Data.Binary.Put
 import Control.Monad (unless, guard)
 import Control.Applicative ((<$>))
 import Data.Ratio (numerator, denominator)
-import Data.Word (Word8)
-import qualified Data.ByteString as BS 
-    ( ByteString
-    , head , length
-    , pack, unpack
-    )
+import qualified Data.ByteString as BS (head, length)
 
 import Network.Haskoin.Crypto.Curve (curveP, curveN)
 import Network.Haskoin.Crypto.NumberTheory (mulInverse)
@@ -58,7 +52,6 @@ import Network.Haskoin.Util
     ( bsToInteger
     , integerToBS
     , bsToHex
-    , bsToString
     )
 
 -- | Data type representing a 512 bit unsigned integer.
@@ -283,7 +276,7 @@ instance Binary (Ring ModP) where
 -- curveP = 3 (mod 4), thus Lagrange solutions apply
 -- http://en.wikipedia.org/wiki/Quadratic_residue
 quadraticResidue :: FieldP -> [FieldP]
-quadraticResidue x = guard (y^2 == x) >> [y, (-y)]
+quadraticResidue x = guard (y^(2 :: Int) == x) >> [y, (-y)]
   where 
     q = (curveP + 1) `div` 4
     y = x^q

@@ -1,19 +1,16 @@
 module Network.Haskoin.Crypto.Keys.Tests (tests) where
 
-import Test.QuickCheck.Property hiding ((.&.))
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.QuickCheck.Property (Property, (==>))
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 
-import Data.Maybe
-import Data.Word
-import Data.Bits
-import Data.Binary
-import Data.Binary.Get
-import Data.Binary.Put
-import qualified Data.ByteString as BS
+import Data.Maybe (fromJust, isNothing)
+import Data.Binary.Get (runGet)
+import Data.Binary.Put (runPut)
+import qualified Data.ByteString as BS (ByteString, length, index)
 
 import QuickCheckUtils
-import Network.Haskoin.Crypto.Arbitrary
+import Network.Haskoin.Crypto.Arbitrary()
 
 import Network.Haskoin.Crypto.Keys
 import Network.Haskoin.Crypto.Point
@@ -88,8 +85,8 @@ fromToWIF :: PrvKey -> Bool
 fromToWIF pk = pk == (fromJust $ fromWIF $ toWIF pk)
 
 getPutPrv :: PrvKey -> Bool
-getPutPrv k@(PrvKey  i) = k == runGet getPrvKey  (runPut $ putPrvKey k)
-getPutPrv k@(PrvKeyU i) = k == runGet getPrvKeyU (runPut $ putPrvKey k)
+getPutPrv k@(PrvKey  _) = k == runGet getPrvKey  (runPut $ putPrvKey k)
+getPutPrv k@(PrvKeyU _) = k == runGet getPrvKeyU (runPut $ putPrvKey k)
 
 {- Key Compression -}
 

@@ -17,44 +17,34 @@ import System.IO
 
 import Control.Monad (liftM, guard, unless)
 import Control.Monad.Trans (MonadTrans, lift)
-import Control.Applicative (Applicative, (<*>), (<$>), pure)
+import Control.Applicative (Applicative, (<*>), (<$>))
 import qualified Control.Monad.State as S
     ( StateT
     , evalStateT
     , get, put
     )
 
-import Data.Word (Word32)
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Bits (testBit)
 import Data.Binary (Binary, get, put)
-import Data.Binary.Put (putWord8, putByteString, runPut)
+import Data.Binary.Put (putWord8, putByteString)
 import Data.Binary.Get (getWord8)
 
 import qualified Data.ByteString as BS 
     ( ByteString
     , length
-    , cons
-    , append
-    , splitAt
     , hGet
     , empty
-    , index
     )
   
 import Network.Haskoin.Util 
     ( stringToBS
     , isolate
-    , integerToBS
     , bsToInteger
     , encode'
     , runPut'
     )
 import Network.Haskoin.Crypto.Hash 
-    ( hash256
-    , hmac512
-    , split512
-    , WorkingState
+    ( WorkingState
     , hmacDRBGNew
     , hmacDRBGGen
     , hmacDRBGRsd
@@ -67,20 +57,16 @@ import Network.Haskoin.Crypto.Keys
     , putPrvKey
     )
 import Network.Haskoin.Crypto.Point 
-    ( Point
-    , getAffine, makePoint
+    ( Point, getAffine
     , mulPoint, shamirsTrick
     )
 import Network.Haskoin.Crypto.Ring 
     ( Hash256
     , FieldN
     , toFieldN
-    , toMod256
     , inverseN
     , isIntegerValidKey
     )
-
-type Nonce = FieldN
 
 -- | Internal state of the 'SecretT' monad
 type SecretState m = (WorkingState, (Int -> m BS.ByteString))
@@ -173,7 +159,7 @@ detSignMsg _ (PrvKeyU 0) = error "detSignMsg: Invalid private key 0"
 detSignMsg h d = go $ hmacDRBGNew (runPut' $ putPrvKey d) (encode' h) BS.empty
   where 
     go ws = case hmacDRBGGen ws 32 BS.empty of
-        (ws', Nothing) -> error "detSignMsg: No suitable K value found"
+        (_, Nothing)  -> error "detSignMsg: No suitable K value found"
         (ws', Just k) -> 
             let kI   = bsToInteger k
                 p    = mulPoint (fromInteger kI) curveG
@@ -243,8 +229,8 @@ instance Binary Signature where
         isolate (fromIntegral l) $ do
             Signature <$> get <*> get
 
-    put (Signature 0 s) = error "0 is an invalid r value in a Signature"
-    put (Signature r 0) = error "0 is an invalid s value in a Signature"
+    put (Signature 0 _) = error "0 is an invalid r value in a Signature"
+    put (Signature _ 0) = error "0 is an invalid s value in a Signature"
     put (Signature r s) = do
         putWord8 0x30
         let c = runPut' $ put r >> put s

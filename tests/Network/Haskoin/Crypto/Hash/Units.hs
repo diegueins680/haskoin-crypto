@@ -1,14 +1,10 @@
 module Network.Haskoin.Crypto.Hash.Units (tests) where
 
-import Test.HUnit
-import Test.Framework
-import Test.Framework.Providers.HUnit
+import Test.HUnit (assertBool, Assertion)
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.HUnit (testCase)
 
-import Control.Monad
-
-import Data.Maybe
-import Data.List
-import qualified Data.ByteString as BS
+import Data.Maybe (fromJust)
 
 import Network.Haskoin.Crypto.Hash
 import Network.Haskoin.Util
@@ -17,6 +13,7 @@ import Network.Haskoin.Util
 -- http://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip
 -- About 1/3 of HMAC DRBG SHA-256 test vectors are tested here
 
+tests :: [Test]
 tests =
     [ testGroup "HMAC DRBG Suite 1" [mapDRBG t1]
     , testGroup "HMAC DRBG Suite 2" [mapDRBG t2]

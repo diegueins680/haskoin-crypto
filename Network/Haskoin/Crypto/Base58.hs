@@ -8,30 +8,19 @@ module Network.Haskoin.Crypto.Base58
 , decodeBase58Check
 ) where
 
-import Control.Monad (guard, unless)
+import Control.Monad (guard)
 import Control.Applicative ((<$>),(<*>))
 
 import Data.Char (ord)
 import Data.Word (Word8)
-import Data.Maybe (fromJust, isJust)
-import Data.Bits (shiftL)
-import Data.Binary (Binary, get, put)
-import Data.Binary.Get (getByteString)
-import Data.Binary.Put (putByteString)
+import Data.Maybe (fromJust)
 
 import qualified Data.ByteString as BS
 import qualified Data.Map.Strict as M
 
-import Network.Haskoin.Crypto.Hash 
-    ( Hash160
-    , chksum32
-    , hash160BS
-    , hash256BS
-    )
+import Network.Haskoin.Crypto.Hash (Hash160, chksum32)
 import Network.Haskoin.Util 
     ( encode'
-    , decode'
-    , decodeOrFail'
     , integerToBS
     , bsToInteger
     , stringToBS
@@ -118,8 +107,8 @@ data Address
 -- | Transforms an Address into a base58 encoded String
 addrToBase58 :: Address -> String
 addrToBase58 addr = bsToString $ encodeBase58Check $ case addr of
-    (PubKeyAddress i) -> BS.cons addrPrefix (encode' $ runAddress addr)
-    (ScriptAddress i) -> BS.cons scriptPrefix (encode' $ runAddress addr)
+    PubKeyAddress i -> BS.cons addrPrefix $ encode' i
+    ScriptAddress i -> BS.cons scriptPrefix $ encode' i
 
 -- | Decodes an Address from a base58 encoded String. This function can fail
 -- if the String is not properly encoded as base58 or the checksum fails.

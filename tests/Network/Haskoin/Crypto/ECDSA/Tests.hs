@@ -1,25 +1,18 @@
 module Network.Haskoin.Crypto.ECDSA.Tests (tests) where
 
-import Test.QuickCheck.Property hiding ((.&.))
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.QuickCheck.Property ((==>), Property)
 
-import Control.Monad.Identity
-import Data.Maybe
-import Data.Word
-import Data.Bits
-import Data.Binary
-import Data.Binary.Get
-import Data.Binary.Put
+import Data.Bits (testBit)
 import qualified Data.ByteString as BS
 
 import QuickCheckUtils
-import Network.Haskoin.Crypto.Arbitrary
+import Network.Haskoin.Crypto.Arbitrary()
 
 import Network.Haskoin.Crypto.ECDSA
 import Network.Haskoin.Crypto.Point
 import Network.Haskoin.Crypto.Ring
-import Network.Haskoin.Crypto.NumberTheory
 import Network.Haskoin.Crypto.Keys
 import Network.Haskoin.Crypto.Curve
 import Network.Haskoin.Util
@@ -58,12 +51,12 @@ halfOrderSig sig@(Signature _ (Ring s)) =
 {- ECDSA Binary -}
 
 getPutSig :: Signature -> Bool
-getPutSig sig@(Signature r s) = sig == (decode' $ encode' sig)
+getPutSig sig = (decode' $ encode' sig) == sig
 
 -- github.com/bitcoin/bitcoin/blob/master/src/script.cpp
 -- from function IsCanonicalSignature
 testIsCanonical :: Signature -> Bool
-testIsCanonical sig@(Signature r s) = not $
+testIsCanonical sig = not $
     -- Non-canonical signature: too short
     (len < 8) ||
     -- Non-canonical signature: too long

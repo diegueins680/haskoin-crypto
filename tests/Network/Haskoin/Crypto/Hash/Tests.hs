@@ -1,16 +1,10 @@
 module Network.Haskoin.Crypto.Hash.Tests (tests) where
 
-import Test.QuickCheck.Property hiding ((.&.))
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-
-import qualified Data.ByteString as BS
-
-import QuickCheckUtils
-import Network.Haskoin.Crypto.Arbitrary
+import Test.Framework (Test, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 
 import Network.Haskoin.Crypto.Hash
-import Network.Haskoin.Util
+import Network.Haskoin.Crypto.Arbitrary()
 
 tests :: [Test]
 tests = 
