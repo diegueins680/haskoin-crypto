@@ -40,6 +40,7 @@ library
                        cryptohash   == 0.11.*,
                        haskoin-util == 0.0.*,
                        QuickCheck   == 2.6.*
+    ghc-options:       -Wall -fno-warn-orphans
 
 Test-Suite test-haskoin-crypto
     type:              exitcode-stdio-1.0
@@ -58,6 +59,7 @@ Test-Suite test-haskoin-crypto
                        test-framework-hunit       == 0.3.*, 
                        HUnit                      == 1.2.*
     hs-source-dirs:    . tests
+    ghc-options:       -Wall -fno-warn-orphans
 
 Benchmark bench-haskoin-crypto
     type:              exitcode-stdio-1.0
@@ -74,4 +76,5 @@ Benchmark bench-haskoin-crypto
                        random       == 1.0.*
     hs-source-dirs:    . benchmark
     ghc-prof-options:  -auto-all -with-rtsopts=-p
+    ghc-options:       -Wall -fno-warn-orphans
 

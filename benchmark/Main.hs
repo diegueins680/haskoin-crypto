@@ -8,7 +8,6 @@ import System.Random
 
 import Data.Maybe
 import Data.Time.Clock
-import qualified Data.ByteString as BS
 
 import Network.Haskoin.Crypto.ECDSA
 import Network.Haskoin.Crypto.Keys
@@ -27,12 +26,16 @@ bench n s f = do
     putStrLn $ s ++ " (" ++ (show n) ++ " samples)"
     putStrLn $ "Total time: " ++ (show t)
     putStrLn $ "Op/sec    : " ++ (show $ (fromIntegral n)/t)
-    return r
+    seq r $ return r
 
+main :: IO ()
 main = do
 
-    bench (10^7) "Ring multiplication (mod n)" (return $ testRing (10^7))
-    bench (10^5) "Ring inversion (mod n)" (return $ invRing (10^5))
+    _ <- bench (10^(7 :: Int)) "Ring multiplication (mod n)" 
+        (return $ testRing $ 10^(7 :: Int))
+        
+    _ <- bench (10^(5 :: Int)) "Ring inversion (mod n)" 
+        (return $ invRing $ 10^(5 :: Int))
 
     let elems = 2000
         msg   = fromInteger $ curveN - 10
@@ -44,17 +47,17 @@ main = do
     !pub <- bench elems "Point multiplications" $ forM priv $ \x -> 
         return $! derivePubKey x
 
-    bench 100000 "Point additions" $ 
+    _ <- bench 100000 "Point additions" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
             let !a = runPubKey x
             return $! addPoint a a
 
-    bench 100000 "Point doubling" $ 
+    _ <- bench 100000 "Point doubling" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
             let !a = runPubKey x
             return $! doublePoint a
 
-    bench elems "Shamirs trick" $ 
+    _ <- bench elems "Shamirs trick" $ 
         forM (priv `zip` pub) $ \(d,q) -> do
             let !a = runPrvKey d
                 !b = runPubKey q
@@ -63,19 +66,23 @@ main = do
     !sigs <- bench elems "Signature creations" $ 
         withSource devURandom $! forM priv (signMsg msg) 
         
-    bench elems "Signature verifications" $ 
+    _ <- bench elems "Signature verifications" $ 
         forM (sigs `zip` pub) $ \(s,q) -> 
             return $! verifySig msg s q
 
+    return ()
+
 testRing :: Int -> FieldN
-testRing max = go 2 0
-    where go i n
-            | n < max = go (i*i) (n + 1)
-            | otherwise = i
+testRing maxVal = go 2 0
+  where 
+    go i n
+        | n < maxVal = go (i*i) (n + 1)
+        | otherwise = i
 
 invRing :: Int -> FieldN
-invRing max = go 1 0
-    where go i n
-            | n < max = go ((inverseN i) + 1) (n + 1)
-            | otherwise = i
+invRing maxVal = go 1 0
+  where 
+    go i n
+        | n < maxVal = go ((inverseN i) + 1) (n + 1)
+        | otherwise = i
 
