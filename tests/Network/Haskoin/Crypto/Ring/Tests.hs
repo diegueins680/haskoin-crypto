@@ -103,37 +103,37 @@ sqrtP x = (a == x && b == (-x)) || (a == (-x) && b == x)
 {- Ring Numeric -}
 
 ringFromInteger :: Integer -> Bool
-ringFromInteger i = getRing ring == fromIntegral model
+ringFromInteger i = getRingInteger ring == fromIntegral model
   where 
     model = fromInteger i :: Word32
     ring  = fromInteger i :: Test32
 
 ringAddition :: Integer -> Integer -> Bool
-ringAddition i1 i2 = getRing ring == fromIntegral model
+ringAddition i1 i2 = getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) + (fromInteger i2) :: Word32
     ring  = (fromInteger i1) + (fromInteger i2) :: Test32
 
 ringMult :: Integer -> Integer -> Bool
-ringMult i1 i2 = getRing ring == fromIntegral model
+ringMult i1 i2 = getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) * (fromInteger i2) :: Word32
     ring  = (fromInteger i1) * (fromInteger i2) :: Test32
 
 ringNegate :: Integer -> Bool
-ringNegate i = getRing ring == fromIntegral model
+ringNegate i = getRingInteger ring == fromIntegral model
   where 
     model = negate (fromInteger i) :: Word32
     ring  = negate (fromInteger i) :: Test32
 
 ringAbs :: Integer -> Bool
-ringAbs i = getRing ring == fromIntegral model
+ringAbs i = getRingInteger ring == fromIntegral model
   where 
     model = abs (fromInteger i) :: Word32
     ring  = abs (fromInteger i) :: Test32
 
 ringSignum :: Integer -> Bool
-ringSignum i = getRing ring == fromIntegral model
+ringSignum i = getRingInteger ring == fromIntegral model
   where 
     model = signum (fromInteger i) :: Word32
     ring  = signum (fromInteger i) :: Test32
@@ -141,31 +141,31 @@ ringSignum i = getRing ring == fromIntegral model
 {- Ring Bits -}
 
 ringAnd :: Integer -> Integer -> Bool
-ringAnd i1 i2 = getRing ring == fromIntegral model
+ringAnd i1 i2 = getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) .&. (fromInteger i2) :: Word32
     ring  = (fromInteger i1) .&. (fromInteger i2) :: Test32
 
 ringOr :: Integer -> Integer -> Bool
-ringOr i1 i2 = getRing ring == fromIntegral model
+ringOr i1 i2 = getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) .|. (fromInteger i2) :: Word32
     ring  = (fromInteger i1) .|. (fromInteger i2) :: Test32
           
 ringXor :: Integer -> Integer -> Bool
-ringXor i1 i2 = getRing ring == fromIntegral model
+ringXor i1 i2 = getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) `xor` (fromInteger i2) :: Word32
     ring  = (fromInteger i1) `xor` (fromInteger i2) :: Test32
 
 ringComplement :: Integer -> Bool
-ringComplement i = getRing ring == fromIntegral model
+ringComplement i = getRingInteger ring == fromIntegral model
   where 
     model = complement (fromInteger i) :: Word32
     ring  = complement (fromInteger i) :: Test32
 
 ringShift :: Integer -> Word8 -> Bool
-ringShift i j = getRing ring == fromIntegral model
+ringShift i j = getRingInteger ring == fromIntegral model
   where 
     model = shift (fromInteger i) (fromIntegral j) :: Word32
     ring  = shift (fromInteger i) (fromIntegral j) :: Test32
@@ -183,7 +183,7 @@ ringTestbit i j = ring == model
     ring  = testBit ((fromInteger i) :: Test32) (fromIntegral j)
 
 ringBit :: Word8 -> Bool
-ringBit i = getRing ring == fromIntegral model
+ringBit i = getRingInteger ring == fromIntegral model
   where 
     model = bit (fromIntegral i) :: Word32
     ring  = bit (fromIntegral i) :: Test32
@@ -211,21 +211,23 @@ ringMaxBound _ = (maxBound :: Test32) + 1 == (minBound :: Test32)
 {- Ring Enum -}
 
 ringSucc :: Integer -> Property
-ringSucc i = (fromIntegral i) /= maxB ==> getRing ring == fromIntegral model
+ringSucc i = (fromIntegral i) /= maxB ==> 
+    getRingInteger ring == fromIntegral model
   where 
     model = succ (fromInteger i) :: Word32
     ring  = succ (fromInteger i) :: Test32
     maxB   = maxBound :: Word32
 
 ringPred :: Integer -> Property
-ringPred i = (fromIntegral i) /= minB ==> getRing ring == fromIntegral model
+ringPred i = (fromIntegral i) /= minB ==> 
+    getRingInteger ring == fromIntegral model
   where 
     model = pred (fromInteger i) :: Word32
     ring  = pred (fromInteger i) :: Test32
     minB   = minBound :: Word32
 
 ringToEnum :: Word32 -> Bool
-ringToEnum w = getRing ring == fromIntegral model
+ringToEnum w = getRingInteger ring == fromIntegral model
   where 
     model = toEnum (fromIntegral w) :: Word32
     ring  = toEnum (fromIntegral w) :: Test32
@@ -239,39 +241,41 @@ ringFromEnum i = model == ring
 {- Ring Integral -}
 
 ringQuot :: Integer -> Integer -> Property
-ringQuot i1 i2 = i2 /= 0 ==> getRing ring == fromIntegral model
+ringQuot i1 i2 = i2 /= 0 ==> getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) `quot` (fromInteger i2) :: Word32
     ring  = (fromInteger i1) `quot` (fromInteger i2) :: Test32
 
 ringRem :: Integer -> Integer -> Property
-ringRem i1 i2 = i2 /= 0 ==> getRing ring == fromIntegral model
+ringRem i1 i2 = i2 /= 0 ==> getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) `rem` (fromInteger i2) :: Word32
     ring  = (fromInteger i1) `rem` (fromInteger i2) :: Test32
 
 ringDiv :: Integer -> Integer -> Property
-ringDiv i1 i2 = i2 /= 0 ==> getRing ring == fromIntegral model
+ringDiv i1 i2 = i2 /= 0 ==> getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) `div` (fromInteger i2) :: Word32
     ring  = (fromInteger i1) `div` (fromInteger i2) :: Test32
 
 ringMod :: Integer -> Integer -> Property
-ringMod i1 i2 = i2 /= 0 ==> getRing ring == fromIntegral model
+ringMod i1 i2 = i2 /= 0 ==> getRingInteger ring == fromIntegral model
   where 
     model = (fromInteger i1) `mod` (fromInteger i2) :: Word32
     ring  = (fromInteger i1) `mod` (fromInteger i2) :: Test32
 
 ringQuotRem :: Integer -> Integer -> Property
 ringQuotRem i1 i2 = i2 /= 0 ==> 
-    (getRing r1 == fromIntegral m1) && (getRing r2 == fromIntegral m2)
+    (getRingInteger r1 == fromIntegral m1) && 
+    (getRingInteger r2 == fromIntegral m2)
   where 
     (m1,m2) = (fromInteger i1) `quotRem` (fromInteger i2) :: (Word32, Word32)
     (r1,r2) = (fromInteger i1) `quotRem` (fromInteger i2) :: (Test32, Test32)
 
 ringDivMod :: Integer -> Integer -> Property
 ringDivMod i1 i2 = i2 /= 0 ==> 
-    (getRing r1 == fromIntegral m1) && (getRing r2 == fromIntegral m2)
+    (getRingInteger r1 == fromIntegral m1) && 
+    (getRingInteger r2 == fromIntegral m2)
   where 
     (m1,m2) = (fromInteger i1) `divMod` (fromInteger i2) :: (Word32, Word32)
     (r1,r2) = (fromInteger i1) `divMod` (fromInteger i2) :: (Test32, Test32)

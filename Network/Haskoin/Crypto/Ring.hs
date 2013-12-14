@@ -74,11 +74,11 @@ data Mod160
 data ModP
 data ModN
 
-newtype Ring n = Ring { getRing :: Integer }
+newtype Ring n = Ring { getRingInteger :: Integer }
     deriving (Eq, Ord)
 
 instance Show (Ring n) where
-    show = show . bsToHex . integerToBS . getRing
+    show = show . bsToHex . integerToBS . getRingInteger
 
 toFieldN :: Ring n -> FieldN
 toFieldN (Ring i) = fromInteger i
