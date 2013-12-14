@@ -61,8 +61,8 @@ instance Arbitrary Address where
 instance Arbitrary Signature where
     arbitrary = do
         msg <- arbitrary
-        prv <- runPrvKey <$> arbitrary
-        non <- runPrvKey <$> arbitrary
+        prv <- prvKeyFieldN <$> arbitrary
+        non <- prvKeyFieldN <$> arbitrary
         let pub  = mulPoint non curveG
         case unsafeSignMsg msg prv (non,pub) of
             (Just sig) -> return sig

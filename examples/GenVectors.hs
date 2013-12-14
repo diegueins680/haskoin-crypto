@@ -56,5 +56,5 @@ main :: IO ()
 main = do
     print "Network.Haskoin test vectors for RFC 6979 ECDSA (secp256k1, SHA-256)"
     print $ "(PrvKey HEX, PrvKey WIF, message, R || S as HEX, sig as DER)"
-    forM_ vectors $ pp . genVector
+    forM_ vectors $ print . genVector
 

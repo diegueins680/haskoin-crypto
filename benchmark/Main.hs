@@ -49,18 +49,18 @@ main = do
 
     _ <- bench 100000 "Point additions" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
-            let !a = runPubKey x
+            let !a = pubKeyPoint x
             return $! addPoint a a
 
     _ <- bench 100000 "Point doubling" $ 
         forM (take 100000 $ cycle pub) $ \x -> do
-            let !a = runPubKey x
+            let !a = pubKeyPoint x
             return $! doublePoint a
 
     _ <- bench elems "Shamirs trick" $ 
         forM (priv `zip` pub) $ \(d,q) -> do
-            let !a = runPrvKey d
-                !b = runPubKey q
+            let !a = prvKeyFieldN d
+                !b = pubKeyPoint q
             return $! shamirsTrick a b a b
 
     !sigs <- bench elems "Signature creations" $ 

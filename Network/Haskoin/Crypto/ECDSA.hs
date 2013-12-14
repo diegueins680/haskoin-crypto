@@ -146,7 +146,7 @@ signMsg _ (PrvKeyU 0) = error "signMsg: Invalid private key 0"
 signMsg h d = do
     -- 4.1.3.1
     (k,p) <- genKeyPair
-    case unsafeSignMsg h (runPrvKey d) (k,p) of
+    case unsafeSignMsg h (prvKeyFieldN d) (k,p) of
         (Just sig) -> return sig
         -- If signing failed, retry with a new nonce
         Nothing    -> signMsg h d
@@ -163,7 +163,7 @@ detSignMsg h d = go $ hmacDRBGNew (runPut' $ putPrvKey d) (encode' h) BS.empty
         (ws', Just k) -> 
             let kI   = bsToInteger k
                 p    = mulPoint (fromInteger kI) curveG
-                sigM = unsafeSignMsg h (runPrvKey d) (fromInteger kI,p)
+                sigM = unsafeSignMsg h (prvKeyFieldN d) (fromInteger kI,p)
                 in if isIntegerValidKey kI
                        then fromMaybe (go ws') sigM
                        else go ws'
@@ -209,7 +209,7 @@ verifySig h (Signature r s) q = case getAffine p of
     u1 = e*s'
     u2 = r*s'
     -- 4.1.4.5 (u1*G + u2*q)
-    p  = shamirsTrick u1 curveG u2 (runPubKey q)
+    p  = shamirsTrick u1 curveG u2 (pubKeyPoint q)
 
 -- | Returns True if the S component of a Signature is <= order/2.
 -- Signatures need to pass this test to be canonical.

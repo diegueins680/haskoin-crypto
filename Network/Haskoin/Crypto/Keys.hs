@@ -82,9 +82,9 @@ curveG = fromJust $ makePoint (fromInteger $ fst pairG)
 -- Uncompressed keys are supported for backwards compatibility.
 data PubKey 
     -- | Compressed public key
-    = PubKey  { runPubKey :: !Point } 
+    = PubKey  { pubKeyPoint :: !Point } 
     -- | Uncompressed public key
-    | PubKeyU { runPubKey :: !Point }
+    | PubKeyU { pubKeyPoint :: !Point }
     deriving Show
 
 instance Eq PubKey where
@@ -98,7 +98,7 @@ instance Eq PubKey where
 -- | Returns True if the public key is valid. This will check if the public
 -- key point lies on the curve.
 isValidPubKey :: PubKey -> Bool
-isValidPubKey = validatePoint . runPubKey
+isValidPubKey = validatePoint . pubKeyPoint
 
 -- | Add a public key to a private key defined by its Hash256 value. This will
 -- transform the private key into a public key and add the respective public
@@ -110,7 +110,7 @@ addPubKeys pub i
     | isPubKeyU pub = error "Add: HDW only supports compressed formats"
     | toInteger i < curveN =
         let pt1 = mulPoint (toFieldN i) curveG
-            pt2 = addPoint (runPubKey pub) pt1
+            pt2 = addPoint (pubKeyPoint pub) pt1
             in if isInfPoint pt2 then Nothing
                                  else Just $ PubKey pt2
     | otherwise = Nothing
@@ -143,7 +143,7 @@ instance Binary PubKey where
              | otherwise = fail "Get: Invalid public key encoding"
 
     -- Section 2.3.3 http://www.secg.org/download/aid-780/sec1-v2.pdf
-    put pk = case getAffine (runPubKey pk) of
+    put pk = case getAffine (pubKeyPoint pk) of
         -- 2.3.3.1
         Nothing    -> putWord8 0x00
         Just (x,y) -> case pk of
@@ -186,9 +186,9 @@ pubKeyAddr = PubKeyAddress . hash160 . hash256BS . encode'
 -- addresses from the corresponding public key. 
 data PrvKey 
     -- | Compressed private key
-    = PrvKey  { runPrvKey :: !FieldN } 
+    = PrvKey  { prvKeyFieldN :: !FieldN } 
     -- | Uncompressed private key
-    | PrvKeyU { runPrvKey :: !FieldN } 
+    | PrvKeyU { prvKeyFieldN :: !FieldN } 
     deriving (Eq, Show)
 
 -- | Returns True if the private key is valid. This will check if the integer
@@ -215,7 +215,7 @@ makePrvKeyU i
 
 -- | Returns the Integer value of a private key
 fromPrvKey :: PrvKey -> Integer
-fromPrvKey = fromIntegral . runPrvKey
+fromPrvKey = fromIntegral . prvKeyFieldN
 
 -- | Add two private keys together. One of the keys is defined by a Hash256.
 -- The functions fails on uncompressed private keys and return Nothing if the
@@ -225,7 +225,7 @@ addPrvKeys :: PrvKey -> Hash256 -> Maybe PrvKey
 addPrvKeys key i
     | isPrvKeyU key = error "Add: HDW only supports compressed formats"
     | toInteger i < curveN =
-        let r = (runPrvKey key) + (toFieldN i) 
+        let r = (prvKeyFieldN key) + (toFieldN i) 
             in makePrvKey $ toInteger r
     | otherwise = Nothing
 
@@ -238,8 +238,8 @@ isPrvKeyU (PrvKeyU _) = True
 -- big endian ByteString. This is useful when a constant length serialization
 -- format for private keys is required
 putPrvKey :: PrvKey -> Put
-putPrvKey k | runPrvKey k == 0 = error "Put: 0 is an invalid private key"
-            | otherwise        = put $ toMod256 $ runPrvKey k
+putPrvKey k | prvKeyFieldN k == 0 = error "Put: 0 is an invalid private key"
+            | otherwise        = put $ toMod256 $ prvKeyFieldN k
 
 -- | Deserializes a compressed private key from the Data.Binary.Get monad as a
 -- 32 byte big endian ByteString.

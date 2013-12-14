@@ -12,10 +12,10 @@ import Network.Haskoin.Crypto.Curve
 data Mod32
 type Test32  = Ring Mod32
 
-newtype TestPrvKeyC = TestPrvKeyC { runTestPrvKeyC :: PrvKey }
+newtype TestPrvKeyC = TestPrvKeyC { getTestPrvKeyC :: PrvKey }
     deriving (Eq, Show)
 
-newtype TestPrvKeyU = TestPrvKeyU { runTestPrvKeyU :: PrvKey }
+newtype TestPrvKeyU = TestPrvKeyU { getTestPrvKeyU :: PrvKey }
     deriving (Eq, Show)
 
 instance RingMod Mod32 where

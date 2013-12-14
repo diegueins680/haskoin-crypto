@@ -121,7 +121,7 @@ testAddPubKey (TestPrvKeyC key) i
     | otherwise             = PubKey model == fromJust res
     where pub   = derivePubKey key
           pt    = mulPoint (toFieldN i) curveG
-          model = addPoint (runPubKey pub) pt
+          model = addPoint (pubKeyPoint pub) pt
           res   = addPubKeys pub i
 
 testAddPrvKey :: TestPrvKeyC -> Hash256 -> Bool
@@ -129,6 +129,6 @@ testAddPrvKey (TestPrvKeyC key) i
     | toInteger i >= curveN = isNothing res
     | model == 0  = isNothing res
     | otherwise   = PrvKey model == fromJust res
-    where model = (runPrvKey key) + (toFieldN i)
+    where model = (prvKeyFieldN key) + (toFieldN i)
           res   = addPrvKeys key i
 
