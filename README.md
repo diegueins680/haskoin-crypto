@@ -26,13 +26,6 @@ automatically through the cabal package manager:
 
 ## Benchmarks
 
-```sh
-    git clone https://github.com/plaprade/haskoin-crypto.git
-    cabal configure --enable-benchmarks
-    cabal build
-    cabal bench
-```
-
 Here are the results of some benchmarks running on a single core I7:
 
 ```
