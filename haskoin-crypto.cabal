@@ -1,5 +1,5 @@
 name:                  haskoin-crypto
-version:               0.0.1
+version:               0.0.1.1
 synopsis:              Implementation of Bitcoin cryptographic primitives.
 description:
   This package provides the elliptic curve cryptography required for creating
@@ -68,22 +68,5 @@ Test-Suite test-haskoin-crypto
                        test-framework-hunit       == 0.3.*, 
                        HUnit                      == 1.2.*
     hs-source-dirs:    . tests
-    ghc-options:       -Wall -fno-warn-orphans
-
-Benchmark bench-haskoin-crypto
-    type:              exitcode-stdio-1.0
-    main-is:           Main.hs
-    build-depends:     base         == 4.6.*, 
-                       containers   == 0.5.*,
-                       mtl          == 2.1.*, 
-                       binary       == 0.7.*, 
-                       bytestring   == 0.10.*, 
-                       byteable     == 0.1.*,
-                       cryptohash   == 0.11.*,
-                       haskoin-util == 0.0.*,
-                       time         == 1.4.*,
-                       random       == 1.0.*
-    hs-source-dirs:    . benchmark
-    ghc-prof-options:  -auto-all -with-rtsopts=-p
     ghc-options:       -Wall -fno-warn-orphans
 
