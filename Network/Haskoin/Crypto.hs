@@ -88,4 +88,4 @@ import Network.Haskoin.Crypto.ECDSA
 import Network.Haskoin.Crypto.Keys
 import Network.Haskoin.Crypto.Hash
 import Network.Haskoin.Crypto.Base58
-
+import Network.Haskoin.Crypto.HumanKey
