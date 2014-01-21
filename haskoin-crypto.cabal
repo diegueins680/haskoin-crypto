@@ -30,7 +30,8 @@ library
                        Network.Haskoin.Crypto.Point,
                        Network.Haskoin.Crypto.Base58,
                        Network.Haskoin.Crypto.Keys,
-                       Network.Haskoin.Crypto.ECDSA
+                       Network.Haskoin.Crypto.ECDSA,
+                       Network.Haskoin.Crypto.HumanKey
     build-depends:     base         >= 4.6  && < 4.7, 
                        containers   >= 0.5  && < 0.6,
                        mtl          >= 2.1  && < 2.2, 
@@ -52,6 +53,7 @@ test-suite test-haskoin-crypto
                        Network.Haskoin.Crypto.Keys.Tests,
                        Network.Haskoin.Crypto.Hash.Tests,
                        Network.Haskoin.Crypto.Hash.Units,
+                       Network.Haskoin.Crypto.HumanKey.Tests,
                        QuickCheckUtils,
                        Units
     build-depends:     base                       >= 4.6  && < 4.7, 
