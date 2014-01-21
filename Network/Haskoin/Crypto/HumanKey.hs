@@ -1,3 +1,4 @@
+-- | RFC-1751 human-readable 128-bit keys
 module Network.Haskoin.Crypto.HumanKey (HumanKey(..)) where
 
 import Data.Binary
@@ -5,7 +6,9 @@ import Data.Bits
 import Data.List
 import Network.Haskoin.Util
 
-data HumanKey = HumanKey String deriving (Eq, Show)
+-- | Data type representing 128-bit keys as 12 English words. Use with
+-- functions from Data.Binary.
+newtype HumanKey = HumanKey String deriving (Eq, Show)
 
 instance Binary HumanKey where
     put (HumanKey humanKey) = do

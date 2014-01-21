@@ -82,6 +82,8 @@ module Network.Haskoin.Crypto
 , encodeBase58Check
 , decodeBase58Check
 
+-- *RFC-1751 human-readable keys
+, HumanKey(..)
 ) where
 
 import Network.Haskoin.Crypto.ECDSA
