@@ -54,6 +54,7 @@ test-suite test-haskoin-crypto
                        Network.Haskoin.Crypto.Hash.Tests,
                        Network.Haskoin.Crypto.Hash.Units,
                        Network.Haskoin.Crypto.HumanKey.Tests,
+                       Network.Haskoin.Crypto.HumanKey.Units,
                        QuickCheckUtils,
                        Units
     build-depends:     base                       >= 4.6  && < 4.7, 

@@ -1,6 +1,6 @@
 -- | RFC-1751 human-readable 128-bit keys
 module Network.Haskoin.Crypto.HumanKey
-    ( HumanKey
+    ( HumanKey()
     , humanKey
     ) where
 
