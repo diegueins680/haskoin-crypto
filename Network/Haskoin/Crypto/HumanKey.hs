@@ -1,29 +1,45 @@
 -- | RFC-1751 human-readable 128-bit keys
-module Network.Haskoin.Crypto.HumanKey (HumanKey(..)) where
+module Network.Haskoin.Crypto.HumanKey
+    ( HumanKey
+    , humanKey
+    ) where
 
 import Data.Binary
 import Data.Binary.Get
+import Data.Binary.Put
 import Data.Bits
+import Data.Char
 import Data.List
 import Network.Haskoin.Util
 
 -- | Data type representing 128-bit keys as 12 English words. Use with
 -- functions from Data.Binary.
-newtype HumanKey = HumanKey String deriving (Eq, Show)
+newtype HumanKey = HumanKey [String] deriving (Eq)
+
+instance Show HumanKey where
+    show (HumanKey ws) = concat $ intersperse " " ws
+
+-- | Build a HumanKey instance. Validates input.
+humanKey :: String -> Either String HumanKey
+humanKey s = do
+    let ws = words $ map toUpper s
+    assertEither "Must have 12 words." $ length ws == 12
+    let (ws1, ws2) = splitAt 6 ws
+    _ <- wordsToKey ws1
+    _ <- wordsToKey ws2
+    return $ HumanKey ws
 
 instance Binary HumanKey where
-    put (HumanKey humanKey) = do
-        let ws = words humanKey
-        assert "Must have 12 words." $ length ws == 12
+    put (HumanKey ws) = do
         let (ws1, ws2) = splitAt 6 ws
-        either fail put $ wordsToKey ws1
-        either fail put $ wordsToKey ws2
+        either fail putWord64be $ wordsToKey ws1
+        either fail putWord64be $ wordsToKey ws2
 
     get = do
         key1 <- getWord64be
         key2 <- getWord64be
         let ws = keyToWords key1 ++ keyToWords key2
-        return . HumanKey . concat . intersperse " " $ ws
+        return $ HumanKey $ ws
 
 keyToWords :: Word64 -> [String]
 keyToWords key =
@@ -35,7 +51,7 @@ keyToWords key =
 
 wordsToKey :: [String] -> Either String Word64
 wordsToKey ws = do
-    let findWord word = elemIndex word dict >>= return . fromIntegral
+    let findWord w = elemIndex w dict >>= return . fromIntegral
         maybeIndices = sequence $ map findWord ws
     indices <- maybeToEither "Unknown word." maybeIndices
     let buildKey acc (bits, index) = (index `shift` bits) .|. acc
