@@ -2,6 +2,7 @@
 module Network.Haskoin.Crypto.HumanKey (HumanKey(..)) where
 
 import Data.Binary
+import Data.Binary.Get
 import Data.Bits
 import Data.List
 import Network.Haskoin.Util
@@ -19,8 +20,8 @@ instance Binary HumanKey where
         either fail put $ wordsToKey ws2
 
     get = do
-        key1 <- get
-        key2 <- get
+        key1 <- getWord64be
+        key2 <- getWord64be
         let ws = keyToWords key1 ++ keyToWords key2
         return . HumanKey . concat . intersperse " " $ ws
 
