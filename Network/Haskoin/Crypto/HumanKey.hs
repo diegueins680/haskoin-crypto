@@ -26,10 +26,12 @@ instance Binary HumanKey where
         return . HumanKey . concat . intersperse " " $ ws
 
 keyToWords :: Word64 -> [String]
-keyToWords key = map ((dict !!) . fromIntegral) indices
-    where keyCheckSum = checkSum key
-          tempIndices = map (\start -> extract key start 11) [0,11..55]
-          indices = init tempIndices ++ [last tempIndices .|. keyCheckSum]
+keyToWords key =
+    map ((dict !!) . fromIntegral) indices
+  where
+    keyCheckSum = checkSum key
+    tempIndices = map (\start -> extract key start 11) [0,11..55]
+    indices = init tempIndices ++ [last tempIndices .|. keyCheckSum]
 
 wordsToKey :: [String] -> Either String Word64
 wordsToKey ws = do
@@ -44,14 +46,18 @@ wordsToKey ws = do
     return key
 
 checkSum :: Word64 -> Word64
-checkSum key = pairSum .&. 0x03
-    where pairSum = sum $ map (flip (extract key) $ 2) [0,2..62]
+checkSum key =
+    pairSum .&. 0x03
+  where
+    pairSum = sum $ map (flip (extract key) $ 2) [0,2..62]
 
 extract :: Word64 -> Int -> Int -> Word64
-extract key start len = temp `shiftL` (len - count)
-    where count = if start + len > 64 then 64 - start else len
-          mask = complement $ 0xffffffffffffffff `shiftL` count
-          temp = key `shiftR` (64 - start - count) .&. mask
+extract key start len =
+    temp `shiftL` (len - count)
+  where
+    count = if start + len > 64 then 64 - start else len
+    mask = complement $ 0xffffffffffffffff `shiftL` count
+    temp = key `shiftR` (64 - start - count) .&. mask
 
 dict :: [String]
 dict =
