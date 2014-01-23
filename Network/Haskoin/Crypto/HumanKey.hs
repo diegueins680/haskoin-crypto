@@ -15,13 +15,8 @@ instance Binary HumanKey where
         let ws = words humanKey
         assert "Must have 12 words." $ length ws == 12
         let (ws1, ws2) = splitAt 6 ws
-        let eitherKeys = do
-            key1 <- wordsToKey ws1
-            key2 <- wordsToKey ws2
-            return (key1, key2)
-        case eitherKeys of
-            Left e -> fail e
-            Right (key1, key2) -> put key1 >> put key2
+        either fail put $ wordsToKey ws1
+        either fail put $ wordsToKey ws2
 
     get = do
         key1 <- get
