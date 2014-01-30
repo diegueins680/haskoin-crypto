@@ -72,6 +72,7 @@ module Network.Haskoin.Crypto
 , hmac256BS
 , split512
 , join512
+, murmurHash3
 
 -- *Base58 and Addresses
 , Address(..)
