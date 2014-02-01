@@ -99,9 +99,9 @@ decodeBase58Check bs = do
 -- |Data type representing a Bitcoin address
 data Address 
     -- | Public Key Hash Address
-    = PubKeyAddress { getAddress :: Hash160 }
+    = PubKeyAddress { getAddrHash :: Hash160 }
     -- | Script Hash Address
-    | ScriptAddress { getAddress :: Hash160 }
+    | ScriptAddress { getAddrHash :: Hash160 }
        deriving (Eq, Show)
 
 -- | Transforms an Address into a base58 encoded String
