@@ -242,7 +242,6 @@ instance Binary (Ring ModN) where
         l <- getWord8
         unless (l <= 33) (fail $
             "Bad DER length " ++ (show l) ++ ". Expecting length <= 33" )
-        -- Todo: Should we check if 'i' is canonical here or at sig level?
         i <- bsToInteger <$> getByteString (fromIntegral l)
         unless (isIntegerValidKey i) $ fail $ 
             "Invalid fieldN element: " ++ (show i)
