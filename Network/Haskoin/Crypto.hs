@@ -74,7 +74,11 @@ module Network.Haskoin.Crypto
 , join512
 , murmurHash3
 
--- *Base58 and Addresses
+  -- *Number representations
+, decodeCompact
+, encodeCompact
+
+  -- *Base58 and Addresses
 , Address(..)
 , base58ToAddr
 , addrToBase58
@@ -83,7 +87,7 @@ module Network.Haskoin.Crypto
 , encodeBase58Check
 , decodeBase58Check
 
--- *RFC-1751 human-readable keys
+  -- *RFC-1751 human-readable keys
 , HumanKey()
 , humanKey
 ) where

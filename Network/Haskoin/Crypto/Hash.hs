@@ -22,9 +22,11 @@ module Network.Haskoin.Crypto.Hash
 , hmacDRBGRsd
 , hmacDRBGGen
 , WorkingState
+, murmurHash3
 , split512
 , join512
-, murmurHash3
+, decodeCompact
+, encodeCompact
 ) where
 
 import Control.Applicative ((<$>))
@@ -43,7 +45,13 @@ import Data.Word (Word16, Word32)
 import Data.Byteable (toBytes)
 import Data.Binary (Binary, get, put)
 import Data.Binary.Get (getWord32le, getWord32be)
-import Data.Bits (shiftL, shiftR, rotateL, xor)
+import Data.Bits 
+    ( shiftL
+    , shiftR
+    , rotateL
+    , xor
+    , (.&.), (.|.)
+    )
 
 import qualified Data.ByteString as BS 
     ( ByteString
@@ -58,7 +66,11 @@ import qualified Data.ByteString as BS
     , drop
     )
 
-import Network.Haskoin.Util (runGet', decode')
+import Network.Haskoin.Util 
+    ( runGet'
+    , decode'
+    , integerToBS
+    )
 import Network.Haskoin.Crypto.Ring 
     ( Hash512
     , Hash256
@@ -146,6 +158,42 @@ split512 i = (fromIntegral $ i `shiftR` 256, fromIntegral i)
 join512 :: (Hash256, Hash256) -> Hash512
 join512 (a,b) = ((toMod512 a) `shiftL` 256) + (toMod512 b)
 
+-- | Decode the compact number used in the difficulty target of a block into an
+-- Integer. 
+--
+-- As described in the Satoshi reference implementation /src/bignum.h:
+--
+-- The "compact" format is a representation of a whole number N using an
+-- unsigned 32bit number similar to a floating point format. The most
+-- significant 8 bits are the unsigned exponent of base 256. This exponent can
+-- be thought of as "number of bytes of N". The lower 23 bits are the mantissa.
+-- Bit number 24 (0x800000) represents the sign of N. 
+--
+-- >    N = (-1^sign) * mantissa * 256^(exponent-3)
+decodeCompact :: Word32 -> Integer
+decodeCompact c = 
+    if neg then (-res) else res
+  where
+    size = fromIntegral $ c `shiftR` 24
+    neg  = (c .&. 0x00800000) /= 0
+    wrd  = c .&. 0x007fffff
+    res | size <= 3 = (toInteger wrd) `shiftR` (8*(3 - size))
+        | otherwise = (toInteger wrd) `shiftL` (8*(size - 3))
+
+-- | Encode an Integer to the compact number format used in the difficulty 
+-- target of a block.
+encodeCompact :: Integer -> Word32
+encodeCompact i 
+    | i < 0     = c3 .|. 0x00800000
+    | otherwise = c3
+  where
+    posi = abs i
+    s1 = BS.length $ integerToBS posi
+    c1 | s1 < 3    = posi `shiftL` (8*(3 - s1))
+       | otherwise = posi `shiftR` (8*(s1 - 3))
+    (s2,c2) | c1 .&. 0x00800000 /= 0  = (s1 + 1, c1 `shiftR` 8)
+            | otherwise               = (s1, c1)
+    c3 = fromIntegral $ c2 .|. ((toInteger s2) `shiftL` 24)
 
 {- 10.1.2 HMAC_DRBG with HMAC-SHA256
    http://csrc.nist.gov/publications/nistpubs/800-90A/SP800-90A.pdf 
@@ -161,7 +209,7 @@ type PersString      = BS.ByteString
 
 -- 10.1.2.2 HMAC DRBG Update FUnction
 hmacDRBGUpd :: ProvidedData -> BS.ByteString -> BS.ByteString
-               -> (BS.ByteString, BS.ByteString)
+            -> (BS.ByteString, BS.ByteString)
 hmacDRBGUpd info k0 v0 
     | BS.null info = (k1,v1) -- 10.1.2.2.3
     | otherwise    = (k2,v2) -- 10.1.2.2.6

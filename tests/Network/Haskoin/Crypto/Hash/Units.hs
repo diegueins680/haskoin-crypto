@@ -26,6 +26,8 @@ tests =
     , testGroup "HMAC DRBG Suite 8 (Reseed)" [mapDRBGRsd r4] 
     , testGroup "Murmur Hash 3" 
         (map mapMurmurVector $ zip murmurVectors [0..])
+    , testGroup "Compact number representation"
+        [ testCase "Compact number representations" testCompact ]
     ]
 
 type TestVector = [String]
@@ -84,6 +86,15 @@ murmurVectors =
     , (0x8034d2a0, 0x00000000, "0011223344556677")
     , (0xb4698def, 0x00000000, "001122334455667788")
     ]
+
+testCompact :: Assertion
+testCompact = do
+    assertBool "Vector 1" $ (encodeCompact 0x1234560000)    == 0x05123456
+    assertBool "Vector 2" $ (decodeCompact 0x05123456)      == 0x1234560000
+    assertBool "Vector 3" $ (encodeCompact 0xc0de000000)    == 0x0600c0de
+    assertBool "Vector 4" $ (decodeCompact 0x0600c0de)      == 0xc0de000000
+    assertBool "Vector 5" $ (encodeCompact (-0x40de000000)) == 0x05c0de00
+    assertBool "Vector 6" $ (decodeCompact 0x05c0de00)      == (-0x40de000000)
 
 {- 
     [SHA-256]
